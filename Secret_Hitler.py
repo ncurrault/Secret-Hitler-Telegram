@@ -46,6 +46,8 @@ class Game:
         random.shuffle(self.players)
 
         self.num_players = len(self.players)
+        self.num_alive_players = self.num_players
+        self.num_dead_players = 0
 
         if self.num_players == 5 or self.num_players == 6: # 1F + H
             fascists = random.sample(players, 2)
@@ -93,12 +95,13 @@ class Game:
             return None
 
     def str_to_player(self, player_str):
+        for p in self.players:
+            if p.id == player_str or p.name.find(player_str) != -1:
+                return p
+
         if player_str.isdigit() and int(player_str) < self.num_players:
             return self.players[int(player_str)]
         else:
-            for p in self.players:
-                if str(p).find(player_str) != -1:
-                    return p
             return None
     def list_players(self):
         ret = "\n"
@@ -114,28 +117,29 @@ class Game:
             return False
         else:
             self.chancellor = target
+
+            Player.global_message("President {} has nominated Chancellor {}.".format(self.president, self.chancellor))
+            Player.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
+            self.game_state = 2
+
             return True
 
     def cast_vote(self, player, vote):
         self.players[self.players.index(player)] = vote
-    def election_done(self):
-        if self.votes.count(None) == 0:
-            return self.votes.count(True) > self.num_players / 2
-        else:
-            return None
+    def election_is_done(self):
+        return self.votes.count(None) == self.num_dead_players:
     def election_call(self):
-        # TODO: use this function to expedite the game by giving pres/chancy their policies before the election is finished
-        if self.votes.count(True) > self.num_players / 2:
+        if self.votes.count(True) > self.num_alive_players / 2:
             return True
-        elif self.votes.count(False) > self.num_players / 2:
+        elif self.votes.count(False) > self.num_alive_players / 2:
             return False
         else:
             return None
-    def end_election(self, president, chancellor):
-        res = self.election_done()
-        assert res != None
+    def end_election(self):
+        assert self.election_is_done()
+        # TODO: expedite the game by giving pres/chancy their policies before the election is finished
 
-        if res:
+        if self.election_call():
             if self.fascist >= 3 and chancellor.role == "Hitler":
                 self.end_game("Fascist", "Hitler was elected chancellor!")
         else:
@@ -242,6 +246,8 @@ class Game:
             self.end_game("Liberal", "Hitler was killed!")
         else:
             self.dead_players.add(target)
+            self.num_alive_players -= 1
+            self.num_dead_players += 1
 
     def anarchy(self):
         self.check_reshuffle()
@@ -280,9 +286,27 @@ class Game:
             return "Game is over"
     def handle_message(self, from_id, msg):
         if self.game_state == 0:
+            for p in players:
+                if p.id == from_id:
+                    p.name = msg
+                    p.send_message("I've set your name to: " + msg)
+                    return
+
+            new_player = Player(from_id, from_id)
+            self.add_player(new_player)
+            new_player.send_message("Welcome to Secret Hitler!  What is your name?")
             return
-        elif self.game_state == 1:
-            return
+
+        from_player = self.str_to_player(from_id)
+
+        if self.game_state == 1 and from_player == self.president:
+            new_chancellor = self.str_to_player(msg)
+            if new_chancellor == None:
+                from_player.send_message("Error: Could not parse player.")
+            elif self.select_chancellor(new_chancellor):
+                from_player.send_message("You have nominated <{}> for chancellor.".format(new_chancellor))
+            else:
+                from_player.send_message("Error: <{}> is term-limited/dead.".format(new_chancellor))
         elif self.game_state == 2:
             return
         elif self.game_state == 3:
