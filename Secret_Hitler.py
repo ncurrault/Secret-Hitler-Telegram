@@ -125,6 +125,8 @@ class Game:
         ret = "\n"
         for i in range(len(self.players)):
             ret += "({}) {}\n".format(i + 1, self.players[i])
+
+        # TODO: add notes next to players indicating TL, RIP, CNH, etc.
         return ret
     def add_player(self, _p):
         self.players.append(p)
