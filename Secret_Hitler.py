@@ -200,8 +200,8 @@ class Game:
         Player.global_message(self.election_results())
 
         if election_result:
-            if self.fascist >= 3 and chancellor.role == "Hitler":
-                self.end_game("Fascist", "Hitler was elected chancellor!")
+            if self.fascist >= 3 and self.chancellor.role == "Hitler":
+                self.end_game("Fascist", "Hitler was elected chancellor")
             else:
                 self.set_game_state(GameStates.LEG_PRES)
 
@@ -282,7 +282,7 @@ class Game:
                 self.set_game_state(GameStates.SPECIAL_ELECTION) # special election
 
         if self.fascist == 4 or self.fascist == 5:
-            self.set_game_state(GameStates.INVESTIGATION) # kill
+            self.set_game_state(GameStates.EXECUTION) # kill
     def next_alive_player(self, starting_after):
         target_index = self.players.index(starting_after)
         while self.players[target_index] == starting_after or self.players[target_index] in self.dead_players:
@@ -312,7 +312,7 @@ class Game:
 
     def kill(self, target):
         if target.role == "Hitler":
-            self.end_game("Liberal", "Hitler was killed!")
+            self.end_game("Liberal", "Hitler was killed")
         else:
             self.dead_players.add(target)
             self.num_alive_players -= 1
@@ -329,7 +329,7 @@ class Game:
         self.anarchy_progress = 0
 
     def end_game(self, winning_party, reason):
-        Player.global_message("The {} team wins!\n{}".format(winning_party, reason))
+        Player.global_message("The {} team wins! ({}.)".format(winning_party, reason))
         self.game_state = GameStates.GAME_OVER
 
     def set_game_state(self, new_state):
@@ -486,7 +486,7 @@ game.add_player(Player("6", "F"))
 game.add_player(Player("7", "G"))
 game.handle_message("3", "/startgame")
 
-game.handle_message("1", "D")
+game.handle_message("1", "D") # 1
 
 game.handle_message("1", "ja")
 game.handle_message("2", "ja")
@@ -501,7 +501,7 @@ game.handle_message("1", "F")
 game.handle_message("4", "F")
 game.handle_message("4", "L")
 
-game.handle_message("2", "E")
+game.handle_message("2", "E") # 2
 
 game.handle_message("1", "ja")
 game.handle_message("2", "ja")
@@ -515,6 +515,44 @@ game.handle_message("2", "L")
 game.handle_message("2", "F")
 game.handle_message("5", "F")
 game.handle_message("5", "L")
+
+game.handle_message("2", "E") # inv
+
+game.handle_message("3", "F") # 3
+
+game.handle_message("1", "ja")
+game.handle_message("2", "ja")
+game.handle_message("3", "ja")
+game.handle_message("4", "nein")
+game.handle_message("5", "ja")
+game.handle_message("6", "nein")
+game.handle_message("7", "ja")
+
+game.handle_message("3", "L")
+game.handle_message("3", "F")
+game.handle_message("6", "F")
+game.handle_message("6", "L")
+
+game.handle_message("3", "D") # se
+
+game.handle_message("4", "G") # 4
+
+game.handle_message("1", "ja")
+game.handle_message("2", "ja")
+game.handle_message("3", "ja")
+game.handle_message("4", "nein")
+game.handle_message("5", "ja")
+game.handle_message("6", "nein")
+game.handle_message("7", "ja")
+
+game.handle_message("4", "L")
+game.handle_message("4", "F")
+game.handle_message("7", "F")
+game.handle_message("7", "L")
+
+game.handle_message("4", "G") # execution
+
+game.handle_message("1", "/boardstats")
 
 while True:
     game.game_loop()
