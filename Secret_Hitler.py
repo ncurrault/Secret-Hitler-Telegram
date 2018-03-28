@@ -27,16 +27,16 @@ class Player:
         Player.global_message("{} has investigated {}".format(self, target))
 
 class GameStates(Enum):
-    ACCEPT_PLAYERS = 0
-    CHANCY_NOMINATION = 1
-    ELECTION = 2
-    LEG_PRES = 3
-    LEG_CHANCY = 4
-    VETO_CHOICE = 4.5
-    INVESTIGATION = 5
-    SPECIAL_ELECTION = 6
-    EXECUTION = 7
-    GAME_OVER = 8
+    ACCEPT_PLAYERS = 1
+    CHANCY_NOMINATION = 2
+    ELECTION = 3
+    LEG_PRES = 4
+    LEG_CHANCY = 5
+    VETO_CHOICE = 6
+    INVESTIGATION = 7
+    SPECIAL_ELECTION = 8
+    EXECUTION = 9
+    GAME_OVER = 10
 class GameOverException(Exception):
     pass
 
@@ -319,12 +319,12 @@ class Game:
             self.deck_peek(self.president, 3)
         else:
             if self.fascist == 2 or (self.fascist == 1 and self.num_players >= 9):
-                self.set_game_state(GameStates.INVESTIGATION) # investigation
+                self.set_game_state(GameStates.INVESTIGATION)
             elif self.fascist == 3:
-                self.set_game_state(GameStates.SPECIAL_ELECTION) # special election
+                self.set_game_state(GameStates.SPECIAL_ELECTION)
 
         if self.fascist == 4 or self.fascist == 5:
-            self.set_game_state(GameStates.EXECUTION) # kill
+            self.set_game_state(GameStates.EXECUTION)
     def next_alive_player(self, starting_after):
         target_index = self.players.index(starting_after)
         while self.players[target_index] == starting_after or self.players[target_index] in self.dead_players:
