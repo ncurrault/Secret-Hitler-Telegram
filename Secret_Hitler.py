@@ -10,10 +10,10 @@ class Player:
 
     @staticmethod
     def global_message(msg):
-        print "Message for everyone: {}".format(msg)
+        print "[ Message for everyone ]\n{}".format(msg)
         # TODO: Telegram channel message
     def send_message(self, msg):
-        print "Message for {}: {}".format(self, msg)
+        print "[ Message for {} ]\n{}".format(self, msg)
         # TODO: Telegram message sending
 
     def set_role(self, _role):
@@ -50,6 +50,8 @@ class Game:
         self.dead_players = set()
         self.last_nonspecial_president = None
 
+        self.num_players = 0
+
         self.votes = []
         self.liberal = 0
         self.fascist = 0
@@ -57,22 +59,23 @@ class Game:
 
         self.game_state = GameStates.ACCEPT_PLAYERS
     def start_game(self):
-        random.shuffle(self.players)
+        # random.shuffle(self.players)
+        # NOTE: players will be seated in order they join unless this is uncommented
 
         self.num_players = len(self.players)
         self.num_alive_players = self.num_players
         self.num_dead_players = 0
 
         if self.num_players == 5 or self.num_players == 6: # 1F + H
-            fascists = random.sample(players, 2)
+            fascists = random.sample(self.players, 2)
         elif self.num_players == 7 or self.num_players == 8: # 2F + H
-            fascists = random.sample(players, 3)
+            fascists = random.sample(self.players, 3)
         elif self.num_players == 9 or self.num_players == 10: # 3F + H
-            fascists = random.sample(players, 4)
+            fascists = random.sample(self.players, 4)
         else:
             raise Exception("Invalid number of players")
 
-        for p in players:
+        for p in self.players:
             if p == fascists[0]:
                 p.set_role("Hitler")
                 if self.num_players <= 6:
@@ -82,11 +85,11 @@ class Game:
                 if self.num_players <= 6:
                     p.send_message("Hitler: {}".format(fascists[0]))
                 else:
-                    p.send_message("Other Fascists: {}\nHitler: {}".format(", ".join(fascists[1:]), fascists[0]))
+                    p.send_message("Other Fascist{}: {}\nHitler: {}".format("s" if len(fascists) > 3 else "", ", ".join([ other_p.name for other_p in fascists[1:] if other_p != p ]), fascists[0]))
             else:
                 p.set_role("Liberal")
 
-        self.president = players[0]
+        self.president = self.players[0]
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
     @staticmethod
@@ -124,13 +127,37 @@ class Game:
     def list_players(self):
         ret = "\n"
         for i in range(len(self.players)):
-            ret += "({}) {}\n".format(i + 1, self.players[i])
+            status = ""
+            if self.players[i] == self.president:
+                status = " (P)"
+            elif self.players[i] == self.chancellor:
+                status = " (C)"
+            elif self.players[i] in self.termlimited_players:
+                status = " (TL)"
+            elif self.players[i] in self.dead_players:
+                status = " (RIP)"
+            ret += "({}) {}{}\n".format(i + 1, self.players[i], status)
 
         # TODO: add notes next to players indicating TL, RIP, CNH, etc.
         return ret
-    def add_player(self, _p):
+    def add_player(self, p):
         self.players.append(p)
-        self.votes.add(None)
+        self.votes.append(None)
+        self.num_players += 1
+    def remove_player(self, p):
+        if self.game_state == GameStates.ACCEPT_PLAYERS:
+            self.players.remove(p)
+            self.votes.pop()
+            self.num_players -= 1
+        elif p in self.dead_players: # TODO probably unnecessary
+            index = self.players.index(p)
+            self.players.pop(index)
+            self.votes.pop(index)
+            self.num_players -= 1
+            self.num_dead_players -= 1
+        else:
+            Player.global_message("Player {} left, so this game is self-destructing".format(p))
+            self.set_game_state(GameStates.GAME_OVER)
 
     def select_chancellor(self, target):
         if target in self.termlimited_players or target in self.dead_players or target == self.president:
@@ -139,13 +166,15 @@ class Game:
             self.chancellor = target
 
             Player.global_message("President {} has nominated Chancellor {}.".format(self.president, self.chancellor))
-            Player.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
+            #Player.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
             self.set_game_state(GameStates.ELECTION)
 
             return True
 
     def cast_vote(self, player, vote):
         self.players[self.players.index(player)] = vote
+    def list_nonvoters(self):
+        return "\n".join([ str(self.players[i]) for i in range(self.num_players) if self.votes[i] is None ])
     def election_is_done(self):
         return self.votes.count(None) == self.num_dead_players
     def election_call(self):
@@ -155,21 +184,35 @@ class Game:
             return False
         else:
             return None
+    def election_results(self):
+        return "\n".join([ "{} - {}".format(self.players[i], "ja" if self.votes[i] else "nein") for i in range(self.num_players)])
+    def update_termlimits(self):
+        self.termlimited_players.clear()
+        self.termlimited_players.add(self.chancellor)
+        if self.num_players - len(self.dead_players) > 5:
+            self.termlimited_players.add(self.president)
+
     def end_election(self):
         assert self.election_is_done()
-        # TODO: expedite the game by giving pres/chancy their policies before the election is finished
+        election_result = self.election_call()
 
-        if self.election_call():
+        Player.global_message("{}".format("JA!" if election_result else "NEIN!"))
+        Player.global_message(self.election_results())
+
+        if election_result:
             if self.fascist >= 3 and chancellor.role == "Hitler":
                 self.end_game("Fascist", "Hitler was elected chancellor!")
             else:
                 self.set_game_state(GameStates.LEG_PRES)
+
+            self.update_termlimits()
+            self.anarchy_progress = 0
         else:
             self.anarchy_progress += 1
             if self.anarchy_progress == 3:
                 self.anarchy()
 
-            self.advance_presidency(False)
+            self.advance_presidency()
 
         self.votes = [None] * self.num_players
 
@@ -196,7 +239,8 @@ class Game:
 
             # TODO: implement veto power
 
-            self.advance_presidency(True)
+            if self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
+                self.advance_presidency()
 
             return True
         else:
@@ -239,20 +283,14 @@ class Game:
 
         if self.fascist == 4 or self.fascist == 5:
             self.set_game_state(GameStates.INVESTIGATION) # kill
-    def next_alive_player(self, player):
-        target_index = self.players.index(target)
-        while self.players[target_index] == player or self.players[target_index] in self.dead_players:
+    def next_alive_player(self, starting_after):
+        target_index = self.players.index(starting_after)
+        while self.players[target_index] == starting_after or self.players[target_index] in self.dead_players:
             target_index += 1
             target_index %= self.num_players
         return self.players[target_index]
 
-    def advance_presidency(self, update_term_limits=True):
-        if update_term_limits:
-            self.termlimited_players.clear()
-            self.termlimited_players.add(self.chancellor)
-            if self.num_players - len(self.dead_players) > 5:
-                self.termlimited_players.add(self.president)
-
+    def advance_presidency(self):
         if self.last_nonspecial_president == None:
             self.president = self.next_alive_player(self.president)
         else:
@@ -309,7 +347,7 @@ class Game:
             self.deck_peek(self.president, 3)
         elif self.game_state == GameStates.LEG_CHANCY:
             Player.global_message("Legislative session in progress (waiting on Chancellor {})".format(self.chancellor))
-            self.president.send_message("Pick a policy to enact:")
+            self.chancellor.send_message("Pick a policy to enact:")
             self.deck_peek(self.chancellor, 2)
         elif self.game_state == GameStates.VETO_CHOICE:
             Player.global_message("President ({}) and Chancellor ({}) are deciding whether to veto (both must agree to do so)".format(self.president, self.chancellor))
@@ -326,23 +364,39 @@ class Game:
             self.president.send_message("Pick someone to kill:\n" + self.list_players())
 
     def handle_message(self, from_id, msg):
-        if self.game_state == GameStates.ACCEPT_PLAYERS:
-            for p in players:
-                if p.id == from_id:
-                    p.name = msg
-                    p.send_message("I've set your name to: " + msg)
-                    return
-
-            new_player = Player(from_id, from_id)
-            self.add_player(new_player)
-            new_player.send_message("Welcome to Secret Hitler!  What is your name?")
-            return
-
         from_player = self.id_to_player(from_id)
 
-        # TODO: anytime commands
-
-        if self.game_state == GameStates.CHANCY_NOMINATION and from_player == self.president:
+        if from_player is not None:
+            if msg.find("/listplayers") != -1:
+                from_player.send_message(self.list_players())
+                return
+            if self.game_state != GameStates.ACCEPT_PLAYERS:
+                if msg.find("/boardstats") != -1:
+                    from_player.send_message("{} Fascist / {} Liberal".format(self.fascist, self.liberal))
+                    return
+                elif msg.find("/deckstats") != -1:
+                    from_player.send_message("{} tiles in deck, {} in discard. {} F / {} L in deck/discard (combined)".format(len(self.deck), len(self.discard), 11 - self.fascist, 6 - self.liberal))
+                    return
+                elif msg.find("/anarchystats") != -1:
+                    from_player.send_message("Election tracker is at {}/3".format(self.anarchy_progress))
+                    return
+        if self.game_state == GameStates.ACCEPT_PLAYERS:
+            if from_player is None and self.num_players < 10:
+                new_player = Player(from_id, from_id)
+                self.add_player(new_player)
+                new_player.send_message("Welcome to Secret Hitler!  What is your name?")
+            elif msg.find("/startgame") != -1:
+                if self.num_players >= 5:
+                    self.start_game()
+                else:
+                    from_player.send_message("Error: only {} players".format(self.num_players))
+            elif msg.find("/leave") != -1:
+                self.remove_player(from_player)
+                from_player.send_message("Successfully left game!")
+            else:
+                from_player.name = msg # TODO: ensure name validity/no duplicates
+                from_player.send_message("I've set your name to: " + msg)
+        elif self.game_state == GameStates.CHANCY_NOMINATION and from_player == self.president:
             new_chancellor = self.str_to_player(msg)
             if new_chancellor == None:
                 from_player.send_message("Error: Could not parse player.")
@@ -350,19 +404,22 @@ class Game:
                 from_player.send_message("You have nominated {} for chancellor.".format(new_chancellor))
             else:
                 from_player.send_message("Error: {} is term-limited/dead/yourself.".format(new_chancellor))
+        elif self.game_state == GameStates.ELECTION and msg.find("/blame") != -1:
+            from_player.send_message("People who haven't yet voted:\n" + self.list_nonvoters())
         elif self.game_state == GameStates.ELECTION and from_player in self.players and from_player not in self.dead_players:
             vote = Game.str_to_vote(msg)
             if vote is None:
                 from_player.send_message("Vote not recognized")
             elif vote:
-                self.votes[self.players.index[from_player]] = True
+                self.votes[self.players.index(from_player)] = True
                 from_player.send_message("Ja vote recorded")
             else:
-                self.votes[self.players.index[from_player]] = False
+                self.votes[self.players.index(from_player)] = False
                 from_player.send_message("Nein vote recorded")
 
             if self.election_is_done():
                 self.end_election()
+            # TODO: expedite the game by giving pres/chancy their policies before the election is finished
         elif self.game_state == GameStates.LEG_PRES and from_player == self.president:
             policy = Game.str_to_policy(msg)
             if policy is None:
@@ -387,6 +444,7 @@ class Game:
                 from_player.send_message("Error: Could not parse player.")
             else:
                 from_player.investigate(target)
+                self.advance_presidency()
         elif self.game_state == GameStates.SPECIAL_ELECTION and from_player == self.president:
             new_president = self.str_to_player(msg)
             if new_president == None:
@@ -395,10 +453,11 @@ class Game:
                 from_player.send_message("You have nominated {} for president.".format(new_president))
             else:
                 from_player.send_message("Error: you can't nominate yourself for president.".format(new_president))
-        elif self.game_state == GameStates.INVESTIGATION and from_player == self.president:
+        elif self.game_state == GameStates.EXECUTION and from_player == self.president:
             if msg.lower().find("me too thanks") != -1:
                 from_player.send_message("You have killed yourself.")
                 self.kill(from_player)
+                self.advance_presidency()
                 return
 
             target = self.str_to_player(msg)
@@ -409,12 +468,53 @@ class Game:
                 from_player.send_message("Reply 'me too thanks' to confirm suicide")
             else:
                 self.kill(target)
+                self.advance_presidency()
                 from_player.send_message("You have killed {}.".format(target))
     def game_loop(self):
-        pass
-        # TODO: telegram message receiving
+        id = raw_input("\tEnter Origin ID: ")
+        message = raw_input("\tEnter Message: ")
+        print "[{}] {}".format(id, message)
+        self.handle_message(id, message)
 
 game = Game()
+game.add_player(Player("1", "A"))
+game.add_player(Player("2", "B"))
+game.add_player(Player("3", "C"))
+game.add_player(Player("4", "D"))
+game.add_player(Player("5", "E"))
+game.add_player(Player("6", "F"))
+game.add_player(Player("7", "G"))
+game.handle_message("3", "/startgame")
+
+game.handle_message("1", "D")
+
+game.handle_message("1", "ja")
+game.handle_message("2", "ja")
+game.handle_message("3", "ja")
+game.handle_message("4", "nein")
+game.handle_message("5", "ja")
+game.handle_message("6", "nein")
+game.handle_message("7", "ja")
+
+game.handle_message("1", "L")
+game.handle_message("1", "F")
+game.handle_message("4", "F")
+game.handle_message("4", "L")
+
+game.handle_message("2", "E")
+
+game.handle_message("1", "ja")
+game.handle_message("2", "ja")
+game.handle_message("3", "ja")
+game.handle_message("4", "nein")
+game.handle_message("5", "ja")
+game.handle_message("6", "nein")
+game.handle_message("7", "ja")
+
+game.handle_message("2", "L")
+game.handle_message("2", "F")
+game.handle_message("5", "F")
+game.handle_message("5", "L")
 
 while True:
     game.game_loop()
