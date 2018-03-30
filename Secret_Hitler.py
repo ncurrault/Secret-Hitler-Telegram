@@ -315,7 +315,7 @@ class Game(object):
         # assert self.election_is_done()
         election_result = self.election_call()
 
-        self.global_message("{}".format("JA!" if election_result else "NEIN!"))
+        self.global_message("JA!" if election_result else "NEIN! Election Tracker is at {}/3".format(self.anarchy_progress + 1))
         self.global_message(self.election_results())
 
         if election_result:
