@@ -421,8 +421,11 @@ class Game(object):
             return self.list_players()
         elif command == "changename":
             if from_player in self.players:
-                from_player.name = args
-                return "Successfully changed name to '{}'".format(args)
+                if args == "":
+                    return "Must specify new name like this: /changename [NEW NAME]"
+                else:
+                    from_player.name = args
+                    return "Successfully changed name to '{}'".format(args)
             else:
                 return "Must be in game to change nickname"
         elif self.game_state == GameStates.ACCEPT_PLAYERS:

@@ -37,7 +37,7 @@ def help_handler(bot, update):
 def newgame_handler(bot, update):
     global game
     chat_id = update.message.chat.id
-    if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER:
+    if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER and update.message.text.find("confirm") == -1:
         bot.send_message(chat_id=chat_id, text="Warning: game already in progress here. Reply '/newgame confirm' to confirm")
     else:
         game = Secret_Hitler.Game(chat_id)
@@ -47,6 +47,8 @@ def parse_message(msg):
     command = msg.split()[0]
     if command.endswith(bot.username):
         command = command[1:command.find("@")]
+    else:
+        command = command[1:]
     args = msg.split()[1:]
     if len(args) == 0:
         args = "" #None
