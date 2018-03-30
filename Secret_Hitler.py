@@ -590,8 +590,13 @@ class Game(object):
                 if args == "":
                     return "Must specify new name like this: /changename [NEW NAME]"
                 else:
-                    from_player.name = args
-                    return "Successfully changed name to '{}'".format(args)
+                    new_name = args
+                    for p in self.players:
+                        if p.name == new_name:
+                            return "Error: name '{}' is already taken".format(new_name)
+
+                    from_player.name = new_name
+                    return "Successfully changed name to '{}'".format(new_name)
             else:
                 return "Must be in game to change nickname"
         elif self.game_state == GameStates.ACCEPT_PLAYERS:
