@@ -449,19 +449,19 @@ class Game(object):
         if on_anarchy:
             return # any executive powers ignored in anarchy
 
-        if self.num_players in (5,6) and self.fascist == 3:
-            # EXAMINE
-            self.check_reshuffle()
-            self.global_message("President ({}) is examining top 3 policies".format(self.president))
-            self.president.send_message("Top three policies are: ")
-            self.deck_peek(self.president, 3)
-        else:
-            if self.fascist == 2 or (self.fascist == 1 and self.num_players >= 9):
+        if self.fascist == 1 and self.num_players in (9, 10):
+            self.set_game_state(GameStates.INVESTIGATION)
+        elif self.fascist == 2 and self.num_players in (7, 8, 9, 10):
                 self.set_game_state(GameStates.INVESTIGATION)
-            elif self.fascist == 3:
+        elif self.fascist == 3:
+            if self.num_players in (5,6): # EXAMINE
+                self.check_reshuffle()
+                self.global_message("President ({}) is examining top 3 policies".format(self.president))
+                self.president.send_message("Top three policies are: ")
+                self.deck_peek(self.president, 3)
+            elif self.num_players in (7, 8, 9, 10):
                 self.set_game_state(GameStates.SPECIAL_ELECTION)
-
-        if self.fascist == 4 or self.fascist == 5:
+        elif self.fascist == 4 or self.fascist == 5:
             self.set_game_state(GameStates.EXECUTION)
 
     def next_alive_player(self, starting_after):
