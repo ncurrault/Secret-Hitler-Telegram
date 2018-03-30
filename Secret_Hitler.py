@@ -2,20 +2,16 @@ import random
 from enum import Enum
 import telegram_integration
 
-CHANNEL_NAME = ""
+GLOBAL_CHAT_ID = None
 TESTING = False
 
-class Player:
+class Player(object):
     def __init__(self, _id, _name):
         self.id = _id
         self.name = _name
     def __str__(self):
         return self.name
 
-    @staticmethod
-    def global_message(msg):
-        # print "[ Message for everyone ]\n{}".format(msg)
-        telegram_integration.bot.send_message(chat_id=CHANNEL_NAME, text=msg)
     def send_message(self, msg):
         # print "[ Message for {} ]\n{}".format(self, msg)
         telegram_integration.bot.send_message(chat_id=self.id, text=msg)
@@ -24,9 +20,6 @@ class Player:
         self.role = _role
         self.party = _role.replace("Hitler", "Fascist")
         self.send_message("Your secret role is {}".format(self.role))
-    def investigate(self, target):
-        self.send_message("<{0}> party affiliation is <{0.party}>".format(target))
-        Player.global_message("{} has investigated {}".format(self, target))
 
 class GameStates(Enum):
     ACCEPT_PLAYERS = 1
@@ -42,14 +35,16 @@ class GameStates(Enum):
 class GameOverException(Exception):
     pass
 
-class Game:
-    def __init__(self):
+class Game(object):
+    def __init__(self, chat_id):
         if TESTING:
             self.deck = ['F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'L']
         else:
             self.deck = ['L', 'L', 'L', 'L', 'L', 'L',
                         'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F']
             random.shuffle(self.deck)
+
+        self.global_chat = chat_id
 
         self.discard = []
 
@@ -125,7 +120,9 @@ class Game:
             return "L"
         else:
             return None
-
+    def global_message(self, msg):
+        # print "[ Message for everyone ]\n{}".format(msg)
+        telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
     def str_to_player(self, player_str):
         if player_str.isdigit() and int(player_str) > 0 and int(player_str) <= self.num_players:
             return self.players[int(player_str) - 1]
@@ -170,7 +167,7 @@ class Game:
             self.num_players -= 1
             self.num_dead_players -= 1
         else:
-            Player.global_message("Player {} left, so this game is self-destructing".format(p))
+            self.global_message("Player {} left, so this game is self-destructing".format(p))
             self.set_game_state(GameStates.GAME_OVER)
 
     def select_chancellor(self, target):
@@ -179,8 +176,8 @@ class Game:
         else:
             self.chancellor = target
 
-            Player.global_message("President {} has nominated Chancellor {}.".format(self.president, self.chancellor))
-            #Player.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
+            self.global_message("President {} has nominated Chancellor {}.".format(self.president, self.chancellor))
+            #self.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
             self.set_game_state(GameStates.ELECTION)
 
             return True
@@ -210,8 +207,8 @@ class Game:
         assert self.election_is_done()
         election_result = self.election_call()
 
-        Player.global_message("{}".format("JA!" if election_result else "NEIN!"))
-        Player.global_message(self.election_results())
+        self.global_message("{}".format("JA!" if election_result else "NEIN!"))
+        self.global_message(self.election_results())
 
         if election_result:
             if self.fascist >= 3 and self.chancellor.role == "Hitler":
@@ -259,7 +256,7 @@ class Game:
 
             random.shuffle(self.deck)
 
-            Player.global_message("Deck has been reshuffled.")
+            self.global_message("Deck has been reshuffled.")
 
     def check_veto(self):
         if False in (self.president_veto_vote, self.chancellor_veto_vote): # no veto
@@ -268,12 +265,12 @@ class Game:
             else:
                 non_vetoer = "Chancellor " + str(self.chancellor)
 
-            Player.global_message("{} has refused to veto".format(non_vetoer))
+            self.global_message("{} has refused to veto".format(non_vetoer))
             self.pass_policy(self.vetoable_polcy)
             self.vetoable_polcy = None
             self.advance_presidency()
         elif self.president_veto_vote and self.chancellor_veto_vote: # veto
-            Player.global_message("VETO!")
+            self.global_message("VETO!")
 
             self.discard.append(self.vetoable_polcy)
             self.check_reshuffle()
@@ -293,20 +290,20 @@ class Game:
         if self.game_state == GameStates.GAME_OVER:
             return
 
-        Player.global_message("BOARD STATE\n{} Fascist\n{} Liberal".format(self.fascist, self.liberal))
+        self.global_message("BOARD STATE\n{} Fascist\n{} Liberal".format(self.fascist, self.liberal))
 
         self.check_reshuffle()
         if not on_anarchy and self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
             self.advance_presidency()
     def pass_liberal(self):
         self.liberal += 1
-        Player.global_message("A liberal policy was passed!")
+        self.global_message("A liberal policy was passed!")
 
         if self.liberal == 5:
             self.end_game("Liberal", "5 Liberal policies were enacted")
     def pass_fascist(self, on_anarchy):
         self.fascist += 1
-        Player.global_message("A fascist policy was passed!")
+        self.global_message("A fascist policy was passed!")
 
         if self.fascist == 6:
             self.end_game("Fascist", "6 Fascist policies were enacted")
@@ -316,7 +313,7 @@ class Game:
 
         if self.num_players in (5,6) and self.fascist == 3:
             self.check_reshuffle()
-            Player.global_message("President ({}) is examining top 3 policies".format(self.president))
+            self.global_message("President ({}) is examining top 3 policies".format(self.president))
             self.president.send_message("Top three policies are: ")
             self.deck_peek(self.president, 3)
         else:
@@ -344,6 +341,9 @@ class Game:
         self.chancellor = None
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
+    def investigate(self, origin, target):
+        origin.send_message("<{0}> party affiliation is <{0.party}>".format(target))
+        self.global_message("{} has investigated {}".format(self, target))
     def deck_peek(self, who, num=3):
         who.send_message("".join(self.deck[:num]))
     def special_elect(self, target):
@@ -370,7 +370,7 @@ class Game:
         self.anarchy_progress = 0
 
     def end_game(self, winning_party, reason):
-        Player.global_message("The {} team wins! ({}.)".format(winning_party, reason))
+        self.global_message("The {} team wins! ({}.)".format(winning_party, reason))
         self.set_game_state(GameStates.GAME_OVER)
         raise GameOverException("The {} team wins! ({}.)".format(winning_party, reason))
 
@@ -378,40 +378,43 @@ class Game:
         self.game_state = new_state
 
         if self.game_state == GameStates.CHANCY_NOMINATION:
-            Player.global_message("President {} must nominate a chancellor".format(self.president))
+            self.global_message("President {} must nominate a chancellor".format(self.president))
             self.president.send_message("Pick your chancellor:\n" + self.list_players())
         elif self.game_state == GameStates.ELECTION:
-            Player.global_message("Election: Vote on President {} and Chancellor {}".format(self.president, self.chancellor))
+            self.global_message("Election: Vote on President {} and Chancellor {}".format(self.president, self.chancellor))
             for p in self.players: # send individual messages to clarify who you're voting on
                 if p not in self.dead_players:
                     p.send_message("{}/{} vote:".format(self.president, self.chancellor))
         elif self.game_state == GameStates.LEG_PRES:
-            Player.global_message("Legislative session in progress (waiting on President {})".format(self.president))
+            self.global_message("Legislative session in progress (waiting on President {})".format(self.president))
             self.president.send_message("Pick a policy to discard:")
             self.deck_peek(self.president, 3)
         elif self.game_state == GameStates.LEG_CHANCY:
-            Player.global_message("Legislative session in progress (waiting on Chancellor {})".format(self.chancellor))
+            self.global_message("Legislative session in progress (waiting on Chancellor {})".format(self.chancellor))
             self.chancellor.send_message("Pick a policy to enact:")
             self.deck_peek(self.chancellor, 2)
         elif self.game_state == GameStates.VETO_CHOICE:
-            Player.global_message("President ({}) and Chancellor ({}) are deciding whether to veto (both must agree to do so)".format(self.president, self.chancellor))
+            self.global_message("President ({}) and Chancellor ({}) are deciding whether to veto (both must agree to do so)".format(self.president, self.chancellor))
             self.president.send_message("Would you like to veto?")
             self.chancellor.send_message("Would you like to veto?")
             self.president_veto_vote = None
             self.chancellor_veto_vote = None
         elif self.game_state == GameStates.INVESTIGATION:
-            Player.global_message("President ({}) must investigate another player".format(self.president))
+            self.global_message("President ({}) must investigate another player".format(self.president))
             self.president.send_message("Pick a player to investigate:\n" + self.list_players())
         elif self.game_state == GameStates.SPECIAL_ELECTION:
-            Player.global_message("Special Election: President ({}) must choose the next presidential candidate".format(self.president))
+            self.global_message("Special Election: President ({}) must choose the next presidential candidate".format(self.president))
             self.president.send_message("Pick the next presidential candidate:\n" + self.list_players())
         elif self.game_state == GameStates.EXECUTION:
-            Player.global_message("President ({}) must kill someone".format(self.president))
+            self.global_message("President ({}) must kill someone".format(self.president))
             self.president.send_message("Pick someone to kill:\n" + self.list_players())
         elif self.game_state == GameStates.GAME_OVER:
-            Player.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
+            self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
             # reveal all player roles when the game has ended
 
+    ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
+        "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
+        "nominate", "kill", "investigate", "enact", "discard")
     def handle_message(self, from_player, command, args):
         # commands valid at any time
         if command == "listplayers":
@@ -431,7 +434,7 @@ class Game:
             elif command == "leave":
                 self.remove_player(from_player)
                 return "Successfully left game!"
-            elif command == "startgame"
+            elif command == "startgame":
                 if self.num_players >= 5:
                     self.start_game()
                     return
@@ -455,7 +458,7 @@ class Game:
             target = self.str_to_player(args)
             if target == None and not (command == "kill" and target.find("me too thanks") != -1 and self.game_state == GameStates.EXECUTION):
                 return "Error: Could not parse player."
-            if command == "nominate"
+            if command == "nominate":
                 if self.game_state == GameStates.CHANCY_NOMINATION:
                     if self.select_chancellor(new_chancellor):
                         return None # "You have nominated {} for chancellor.".format(target)
@@ -480,7 +483,7 @@ class Game:
                     self.advance_presidency()
                     from_player.send_message("You have killed {}.".format(target))
             elif command == "investigate" and self.game_state == GameStates.INVESTIGATION:
-                from_player.investigate(target)
+                self.investigate(from_player, target)
                 self.advance_presidency()
         elif command in ("ja", "nein"):
             vote = (command == "ja")
@@ -517,13 +520,13 @@ class Game:
             elif self.game_state == GameStates.LEG_CHANCY and from_player == self.chancellor:
                 if command == "discard" and self.deck[0] != self.deck[1]:
                     policy = "L" if policy == "F" else "F"
+
                 if self.chancellor_legislate(policy):
                     return None
                     # if self.fascist < 5: # prevents "thanks" from happening after veto notification
                     #     return "Thanks!"
                 else:
                     return "Error: Given policy not in top 2"
-
 
 # if TESTING:
 #     game = Game()
