@@ -1,7 +1,7 @@
 import Secret_Hitler
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters
-import re
+import logging
 
 with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
@@ -86,6 +86,10 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler))
 
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS, game_command_handler))
+
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO) # not sure exactly how this works
 
     updater.start_polling()
     updater.idle()
