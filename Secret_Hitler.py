@@ -27,6 +27,8 @@ class Player(object):
             print "[ Message for {} ]\n{}".format(self, msg)
         else:
             telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+    def get_markdown_tag(self):
+        return "[{}](tg://user?id={})".format(self.name, self.id)
 
     def set_role(self, _role):
         """
@@ -255,9 +257,9 @@ class Game(object):
     def list_nonvoters(self):
         """
         Assumes current state is ELECTION.
-        List all players who have not voted, separated by newlines.
+        List (and tags) all players who have not voted, separated by newlines.
         """
-        return "\n".join([ str(self.players[i]) for i in range(self.num_players) if self.votes[i] is None ])
+        return "\n".join([ self.players[i].get_markdown_tag() for i in range(self.num_players) if self.votes[i] is None and self.players[i] not in self.dead_players ])
     def election_is_done(self):
         """
         Assumes current state is ELECTION.
@@ -578,6 +580,7 @@ class Game(object):
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
         "nominate", "kill", "investigate", "enact", "discard")
+    MARKDOWN_COMMANDS = ("joingame", "blame") # these all use links/tags
     def handle_message(self, from_player, command, args=""):
         # commands valid at any time
         if command == "listplayers":

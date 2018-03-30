@@ -71,7 +71,10 @@ def game_command_handler(bot, update):
             reply = game.handle_message(player, command, args)
 
             if reply: # reply is None if no response is necessary
-                bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
+                if command in Secret_Hitler.Game.MARKDOWN_COMMANDS: # these require links/tagging
+                    bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
+                else:
+                    bot.send_message(chat_id=chat_id, text=reply)
         except Secret_Hitler.GameOverException:
             return
 
