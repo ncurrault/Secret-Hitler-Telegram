@@ -1,0 +1,20 @@
+listplayers - list all players with annotations for Pres, Chancy, term-limits, and deaths
+boardstats - list the number of each type of policy passed
+deckstats - get number of tiles in deck, discard, and public info about type distribution
+anarchystats - get status of election tracker
+newgame - start a game with global messages in the current chat
+joingame - join the game occurring in a chat
+leave - leave a game (only valid if it has not started)
+startgame - deal out roles and begin the game!
+ja - Ja!
+nein - Nein
+blame - list all players who haven't voted in an election
+help - view details about command syntax
+
+
+changename [NEW NAME] - change your nickname (default is your Telegram first name)
+nominate - use with player name/index to nominate someone for chancellor/president (when allowed)
+kill - use with player name/index to kill another player (when allowed)
+investigate - use with player name/index to investigate the party affiliation of another player (when allowed)
+enact - use with a policy type as chancellor to pick a policy to enact
+discard - use with a policy type as president or chancellor to pick a policy to discard
