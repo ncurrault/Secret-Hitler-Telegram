@@ -1,3 +1,4 @@
+-- Commands with no arguments --
 listplayers - list all players with annotations for Pres, Chancy, term-limits, and deaths
 boardstats - list the number of each type of policy passed
 deckstats - get number of tiles in deck, discard, and public info about type distribution
@@ -11,10 +12,10 @@ nein - Nein
 blame - list all players who haven't voted in an election
 help - view details about command syntax
 
-
+-- Commands that require arguments --
 changename [NEW NAME] - change your nickname (default is your Telegram first name)
-nominate - use with player name/index to nominate someone for chancellor/president (when allowed)
-kill - use with player name/index to kill another player (when allowed)
-investigate - use with player name/index to investigate the party affiliation of another player (when allowed)
-enact - use with a policy type as chancellor to pick a policy to enact
-discard - use with a policy type as president or chancellor to pick a policy to discard
+nominate [PLAYER NAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
+kill [PLAYER NAME] - kill another player
+investigate [PLAYER NAME] - investigate the party affiliation of another player
+enact [POLICY] - as chancellor, pick a policy to enact
+discard [POLICY] - as president or chancellor, pick a policy to discard

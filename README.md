@@ -5,26 +5,7 @@ A Telegram bot that allows users to play Secret Hitler.
 
 ## Special Commands
 
-* Available at any time
-  * /listplayers - list all players (with annotations as described below)
-  * /boardstats - list the number of each type of policy passed
-  * /deckstats - get number of tiles in deck, discard, and public knowledge about policy-type distribution
-  * /anarchystats - get status of election tracker (number of failed elections/anarchies)
-* In ACCEPT_PLAYERS game state
-  * /newgame - start a game with global messages in the current chat
-  * /joingame - join the game occurring in this chat
-  * /leave - leave a game (only valid once it has not started)
-  * /changename - change your nickname
-  * /startgame - deal out roles and begin the game!
-* At appropriate points in the game
-  * /blame - list all players who haven't voted in an election
-  * /ja - Ja!
-  * /nein - Nein
-  * /nominate [PLAYERNAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
-  * /kill [PLAYERNAME] - kill another player
-  * /investigate [PLAYERNAME] - investigate the party affiliation of another player
-  * /enact [POLICY] - as chancellor, pick a policy to enact
-  * /discard [POLICY] - as president or chancellor, pick a policy to discard
+See [command_list.txt](command_list.txt) for a list of available commands and descriptions.  Note that some commands are only available to certain players in certain game states.
 
 ## Player status abbreviations
 * (P) indicates a current president/presidential candidate
