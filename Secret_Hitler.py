@@ -102,8 +102,8 @@ class Game(object):
 
         if TESTING:
             roles = ["Liberal", "Hitler", "Liberal", "Fascist", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
-            for i in range(len(players)):
-                players[i].set_role(roles[i])
+            for i in range(len(self.players)):
+                self.players[i].set_role(roles[i])
                 # NOTE: testing configuration does not "notify" fascists of night-phase info (if this breaks, it'll be apparent pretty quickly)
         else:
             if self.num_players == 5 or self.num_players == 6: # 1F + H
@@ -495,7 +495,7 @@ class Game(object):
          - Sends player their target's party affiliation
         """
         origin.send_message("<{0}> party affiliation is <{0.party}>".format(target))
-        self.global_message("{} has investigated {}".format(self, target))
+        self.global_message("{} has investigated {}".format(origin, target))
     def deck_peek(self, who, num=3):
         """
         Sends player `who` a message indicating the top `num` policy tiles.
@@ -623,14 +623,14 @@ class Game(object):
         elif command in ("nominate", "kill", "investigate") and from_player == self.president:
             # commands that involve the president selecting another player
             target = self.get_player(args)
-            if target == None and not (command == "kill" and target.find("me too thanks") != -1 and self.game_state == GameStates.EXECUTION):
+            if target == None and not (command == "kill" and args.find("me too thanks") != -1 and self.game_state == GameStates.EXECUTION):
                 return "Error: Could not parse player."
             if command == "nominate":
                 if self.game_state == GameStates.CHANCY_NOMINATION:
-                    if self.select_chancellor(new_chancellor):
+                    if self.select_chancellor(target):
                         return None # "You have nominated {} for chancellor.".format(target)
                     else:
-                        return "Error: {} is term-limited/dead/yourself.".format(new_chancellor)
+                        return "Error: {} is term-limited/dead/yourself.".format(target)
                 elif self.game_state == GameStates.SPECIAL_ELECTION:
                     if self.special_elect(target):
                         self.set_game_state(GameStates.CHANCY_NOMINATION)
@@ -720,7 +720,8 @@ def test_game():
     def handle_handle(player, command, args=""):
         response = game.handle_message(player, command, args)
         print "[{}] {} {}".format(player, command, args)
-        print "[Reply to {}] {}".format(player, response)
+        if response:
+            print "[Reply to {}] {}".format(player, response)
 
     handle_handle(players[2], "startgame")
 
@@ -737,7 +738,7 @@ def test_game():
 
     handle_handle(players[1], "investigate", "E")
 
-    handle_handle(players[2], "F") # election 3
+    handle_handle(players[2], "nominate", "F") # election 3
     passing_vote()
     handle_handle(players[2], "discard", "L")
     handle_handle(players[5], "enact", "F")
@@ -749,7 +750,7 @@ def test_game():
     handle_handle(players[1], "discard", "L")
     handle_handle(players[6], "enact", "F")
 
-    handle_handle(players[1], "me too thanks") # execution
+    handle_handle(players[1], "kill", "me too thanks") # execution
 
     handle_handle(players[3], "A") # election 5 - should fail because dead people cannot vote and ties fail
     handle_handle(players[0], "nein")
