@@ -101,7 +101,7 @@ class Game(object):
         self.num_dead_players = 0
 
         if TESTING:
-            roles = ["Liberal", "Hitler", "Liberal", "Fascist", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
+            roles = ["Liberal", "Fascist", "Liberal", "Hitler", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
             for i in range(len(self.players)):
                 self.players[i].set_role(roles[i])
                 # NOTE: testing configuration does not "notify" fascists of night-phase info (if this breaks, it'll be apparent pretty quickly)
@@ -639,8 +639,7 @@ class Game(object):
                         return "Error: you can't nominate yourself for president.".format(target)
             elif command == "kill" and self.game_state == GameStates.EXECUTION:
                 if from_player == target:
-                    from_player.send_message("You are about to kill yourself.  This is technically allowed by the rules, but why are you like this?")
-                    from_player.send_message("Reply 'me too thanks' to confirm suicide")
+                    return "You are about to kill yourself (technically allowed by the rules). Reply '/kill me too thanks' to confirm suicide."
                 elif args.find("me too thanks") != -1:
                     self.kill(from_player)
                     self.advance_presidency()
@@ -694,6 +693,15 @@ class Game(object):
                     #     return "Thanks!"
                 else:
                     return "Error: Given policy not in top 2"
+    def TEST_handle(self, player, command, args=""):
+        response = self.handle_message(player, command, args)
+        print "[{}] {} {}".format(player, command, args)
+        if response:
+            print "[Reply to {}] {}".format(player, response)
+    def TEST_passing_vote(self):
+        for p in self.players:
+            if p not in self.dead_players:
+                self.TEST_handle(p, "ja")
 
 def test_game():
     game = Game(None)
@@ -709,93 +717,79 @@ def test_game():
     for p in players:
         game.add_player(p)
 
-    def passing_vote():
-        game.handle_message(players[0], "ja")
-        game.handle_message(players[1], "ja")
-        game.handle_message(players[2], "ja")
-        game.handle_message(players[3], "ja")
-        game.handle_message(players[4], "ja")
-        game.handle_message(players[5], "ja")
-        game.handle_message(players[6], "ja")
-    def handle_handle(player, command, args=""):
-        response = game.handle_message(player, command, args)
-        print "[{}] {} {}".format(player, command, args)
-        if response:
-            print "[Reply to {}] {}".format(player, response)
+    game.TEST_handle(players[2], "startgame")
 
-    handle_handle(players[2], "startgame")
+    game.TEST_handle(players[0], "nominate", "D") # election 1
+    game.TEST_passing_vote()
 
-    handle_handle(players[0], "nominate", "D") # election 1
-    passing_vote()
+    game.TEST_handle(players[0], "discard", "L")
+    game.TEST_handle(players[3], "enact", "F") # 0L / 1F
 
-    handle_handle(players[0], "discard", "L")
-    handle_handle(players[3], "enact", "F") # 0L / 1F
+    game.TEST_handle(players[1], "nominate", "E") # election 2
+    game.TEST_passing_vote()
+    game.TEST_handle(players[1], "discard", "L")
+    game.TEST_handle(players[4], "enact", "F")
 
-    handle_handle(players[1], "nominate", "E") # election 2
-    passing_vote()
-    handle_handle(players[1], "discard", "L")
-    handle_handle(players[4], "enact", "F")
+    game.TEST_handle(players[1], "investigate", "E")
 
-    handle_handle(players[1], "investigate", "E")
+    game.TEST_handle(players[2], "nominate", "F") # election 3
+    game.TEST_passing_vote()
+    game.TEST_handle(players[2], "discard", "L")
+    game.TEST_handle(players[5], "enact", "F")
 
-    handle_handle(players[2], "nominate", "F") # election 3
-    passing_vote()
-    handle_handle(players[2], "discard", "L")
-    handle_handle(players[5], "enact", "F")
+    game.TEST_handle(players[2], "nominate", "B") # special elect
 
-    handle_handle(players[2], "nominate", "B") # special elect
+    game.TEST_handle(players[1], "nominate", "G") # election 4
+    game.TEST_passing_vote()
+    game.TEST_handle(players[1], "discard", "L")
+    game.TEST_handle(players[6], "enact", "F")
 
-    handle_handle(players[1], "nominate", "G") # election 4
-    passing_vote()
-    handle_handle(players[1], "discard", "L")
-    handle_handle(players[6], "enact", "F")
+    game.TEST_handle(players[1], "kill", "me too thanks") # execution
 
-    handle_handle(players[1], "kill", "me too thanks") # execution
+    game.TEST_handle(players[3], "nominate", "A") # election 5 - should fail because dead people cannot vote and ties fail
+    game.TEST_handle(players[0], "nein")
+    game.TEST_handle(players[1], "ja") # players[1] is dead
+    game.TEST_handle(players[2], "ja")
+    game.TEST_handle(players[3], "nein")
+    game.TEST_handle(players[4], "nein")
+    game.TEST_handle(players[5], "ja")
+    game.TEST_handle(players[6], "ja")
 
-    handle_handle(players[3], "A") # election 5 - should fail because dead people cannot vote and ties fail
-    handle_handle(players[0], "nein")
-    handle_handle(players[1], "ja") # players[1] is dead
-    handle_handle(players[2], "ja")
-    handle_handle(players[3], "nein")
-    handle_handle(players[4], "nein")
-    handle_handle(players[5], "ja")
-    handle_handle(players[6], "ja")
+    game.TEST_handle(players[4], "nominate", "A") # election 6 - fail
+    game.TEST_handle(players[0], "nein")
+    game.TEST_handle(players[2], "ja")
+    game.TEST_handle(players[3], "nein")
+    game.TEST_handle(players[4], "nein")
+    game.TEST_handle(players[5], "ja")
+    game.TEST_handle(players[6], "ja")
 
-    handle_handle(players[4], "nominate", "A") # election 6 - fail
-    handle_handle(players[0], "nein")
-    handle_handle(players[2], "ja")
-    handle_handle(players[3], "nein")
-    handle_handle(players[4], "nein")
-    handle_handle(players[5], "ja")
-    handle_handle(players[6], "ja")
-
-    handle_handle(players[5], "nominate", "A") # election 7 - fail
-    handle_handle(players[0], "nein")
-    handle_handle(players[2], "ja")
-    handle_handle(players[3], "nein")
-    handle_handle(players[4], "nein")
-    handle_handle(players[5], "ja")
-    handle_handle(players[6], "ja")
+    game.TEST_handle(players[5], "nominate", "A") # election 7 - fail
+    game.TEST_handle(players[0], "nein")
+    game.TEST_handle(players[2], "ja")
+    game.TEST_handle(players[3], "nein")
+    game.TEST_handle(players[4], "nein")
+    game.TEST_handle(players[5], "ja")
+    game.TEST_handle(players[6], "ja")
 
     # anarchy, second bullet should be ignored
 
-    handle_handle(players[6], "nominate", "A")
-    passing_vote()
+    game.TEST_handle(players[6], "nominate", "A")
+    game.TEST_passing_vote()
 
-    handle_handle(players[6], "discard", "s p i c y b o i")
-    handle_handle(players[0], "enact", "liberal") # check other policy nomenclature
+    game.TEST_handle(players[6], "discard", "s p i c y b o i")
+    game.TEST_handle(players[0], "enact", "liberal") # check other policy nomenclature
 
-    handle_handle(players[0], "ja") #veto decisison
-    handle_handle(players[6], "nein")
+    game.TEST_handle(players[0], "ja") #veto decisison
+    game.TEST_handle(players[6], "nein")
 
-    handle_handle(players[0], "nominate", "D")
-    passing_vote()
+    game.TEST_handle(players[0], "nominate", "D")
+    game.TEST_passing_vote()
 
-    handle_handle(players[0], "discard", "l")
-    handle_handle(players[3], "enact", "f")
+    game.TEST_handle(players[0], "discard", "l")
+    game.TEST_handle(players[3], "enact", "f")
 
     #veto decisison
-    handle_handle(players[0], "nein")
+    game.TEST_handle(players[0], "nein")
     # Fascist victory
     # game.handle_message(players[6], "ja") # other veto vote shouldn't matter
 
