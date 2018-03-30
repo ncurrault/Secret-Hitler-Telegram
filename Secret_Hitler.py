@@ -693,6 +693,8 @@ class Game(object):
                     #     return "Thanks!"
                 else:
                     return "Error: Given policy not in top 2"
+        else:
+            return "/{} is not valid here".format(command)
     def TEST_handle(self, player, command, args=""):
         response = self.handle_message(player, command, args)
         print "[{}] {} {}".format(player, command, args)
