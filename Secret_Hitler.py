@@ -2,11 +2,16 @@ import random
 from enum import Enum
 import telegram_integration
 
-GLOBAL_CHAT_ID = None
 TESTING = False
 
 class Player(object):
+    """
+    Class for keeping track of an individual Secret Hitler player.
+    """
     def __init__(self, _id, _name):
+        """
+        Set player's name and Telegram ID
+        """
         self.id = _id
         self.name = _name
     def __str__(self):
@@ -17,6 +22,9 @@ class Player(object):
         telegram_integration.bot.send_message(chat_id=self.id, text=msg)
 
     def set_role(self, _role):
+        """
+        Sets a user's role/party affiliation and notifies them about it.
+        """
         self.role = _role
         self.party = _role.replace("Hitler", "Fascist")
         self.send_message("Your secret role is {}".format(self.role))
@@ -37,6 +45,9 @@ class GameOverException(Exception):
 
 class Game(object):
     def __init__(self, chat_id):
+        """
+        Initialize a game with a given chat location. Prepare deck/discard, begin accepting players.
+        """
         if TESTING:
             self.deck = ['F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'L']
         else:
@@ -69,6 +80,13 @@ class Game(object):
 
         self.game_state = GameStates.ACCEPT_PLAYERS
     def start_game(self):
+        """
+        Starts a game:
+        - assign all players roles
+        - send fascists night-phase information
+        - begin presidential rotation with the first presidnet nominating their chancellor
+        """
+
         # random.shuffle(self.players)
         # NOTE: players will be seated in order they join unless this is uncommented
 
@@ -102,41 +120,56 @@ class Game(object):
         self.president = self.players[0]
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
-    @staticmethod
-    def str_to_vote(vote_str):
-        vote_str = vote_str.lower()
-        if vote_str in ("ja", "yes", "y"):
-            return True
-        elif vote_str in ("nein", "no", "n"):
-            return False
-        else:
-            return None
+    def global_message(self, msg):
+        """
+        Send a message to all players using the chat specified in the constructor.
+        """
+        # print "[ Message for everyone ]\n{}".format(msg)
+        telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+
     @staticmethod
     def str_to_policy(vote_str):
+        """
+        Helper function for interpreting a policy by the strings a user could have entered.
+        Returns "F", "L", or None (if the policy could not be determined)
+        """
         vote_str = vote_str.lower()
-        if vote_str == "f" or vote_str.find("s p i c y") != -1 or vote_str == "fascist":
+        if vote_str in ("f", "fascist", "r", "red") or vote_str.replace(" ","").find("spicy") != -1:
             return "F"
-        elif vote_str == "l" or vote_str.find("") != -1 or vote_str == "lib":
+        elif vote_str in ("l", "liberal", "b", "blue") or vote_str.replace(" ","").find("nice") != -1:
             return "L"
         else:
             return None
-    def global_message(self, msg):
-        # print "[ Message for everyone ]\n{}".format(msg)
-        telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
-    def str_to_player(self, player_str):
+    def get_player(self, player_str):
+        """
+        Helper function for getting a player from their index or name (which they could be referred to by).
+        Returns None if player could not be identified.
+        """
         if player_str.isdigit() and int(player_str) > 0 and int(player_str) <= self.num_players:
             return self.players[int(player_str) - 1]
         else:
             for p in self.players:
-                if p.name.find(player_str) != -1:
+                if p.name.lower() == player_str.lower(): #p.name.find(player_str) != -1:
                     return p
             return None
-    def id_to_player(self, id):
+    def get_player_by_id(self, id):
+        """
+        Get a player by their Telegram ID.
+        Returns None if player with this ID could not be found.
+        """
         for p in self.players:
             if p.id == id:
                 return p
         return None
+
     def list_players(self):
+        """
+        List all players (separated by newlines) with their indices and annotations:
+        (P) indicates a president/presidential candidate
+        (C) indicates a chancellor/chancellor candidate
+        (TL) indicates a term-limited player
+        (RIP) indicates a dead player
+        """
         ret = ""
         for i in range(len(self.players)):
             status = ""
@@ -152,11 +185,24 @@ class Game(object):
 
         return ret
     def add_player(self, p):
+        """
+        Given a Player p, add them to the game.
+        """
         self.players.append(p)
         self.votes.append(None)
         self.num_players += 1
+        self.num_alive_players += 1
+
     def remove_player(self, p):
-        if self.game_state == GameStates.ACCEPT_PLAYERS:
+        """
+        Remove a Player p from the game. (If p is not in the game, does nothing)
+        Only valid before game starts or, theoretically, if they're dead (untested)
+        If this method is called on a live player after the game has begun, the game will self-destruct
+        (reval all player roles and declare game over).
+        """
+        if p not in self.players:
+            return # alredy "removed" because not in
+        elif self.game_state == GameStates.ACCEPT_PLAYERS:
             self.players.remove(p)
             self.votes.pop()
             self.num_players -= 1
@@ -171,6 +217,10 @@ class Game(object):
             self.set_game_state(GameStates.GAME_OVER)
 
     def select_chancellor(self, target):
+        """
+        Assumes state is CHANCY_NOMINATION and target in self.players.
+        Select player `target` for chancellor.
+        """
         if target in self.termlimited_players or target in self.dead_players or target == self.president:
             return False
         else:
@@ -183,12 +233,31 @@ class Game(object):
             return True
 
     def cast_vote(self, player, vote):
+        """
+        Assumes current state is ELECTION.
+        Casts a vote for a player.
+        """
         self.players[self.players.index(player)] = vote
     def list_nonvoters(self):
+        """
+        Assumes current state is ELECTION.
+        List all players who have not voted, separated by newlines.
+        """
         return "\n".join([ str(self.players[i]) for i in range(self.num_players) if self.votes[i] is None ])
     def election_is_done(self):
+        """
+        Assumes current state is ELECTION.
+        Determine whether an election is done (all alive players have voted)
+        """
         return self.votes.count(None) == self.num_dead_players
     def election_call(self):
+        """
+        Assumes current state is ELECTION.
+        Gets the result of an election:
+         - True if passed
+         - False if failed
+         - None if result cannot yet be determined
+        """
         if self.votes.count(True) > self.num_alive_players / 2:
             return True
         elif self.votes.count(False) >= self.num_alive_players / 2:
@@ -196,15 +265,38 @@ class Game(object):
         else:
             return None
     def election_results(self):
+        """
+        Assumes current state is ELECTION.
+        Get election results in user-friendy format (list of "player - vote" strings, separated by newlines)
+        """
         return "\n".join([ "{} - {}".format(self.players[i], "ja" if self.votes[i] else "nein") for i in range(self.num_players) if self.players[i] not in self.dead_players])
     def update_termlimits(self):
+        """
+        Updates term-limits:
+        replaces current TLs with current president/chancellor, or just chancellor if there are <= 5 players remaining
+
+        Assumes neither self.president nor self.chancellor is None
+        """
         self.termlimited_players.clear()
         self.termlimited_players.add(self.chancellor)
         if self.num_players - len(self.dead_players) > 5:
             self.termlimited_players.add(self.president)
 
     def end_election(self):
-        assert self.election_is_done()
+        """
+        Perform actions required at end of an election:
+         - broadcast voting record
+         - determine and announce result
+         - if election passed:
+           - check if Hitler was elected chancellor with >=3F and end game if so
+           - update term-limits
+           - reset Election Tracker
+           - begin Legislative Session
+         - if election failed
+           - increment election counter, checking for anarchy
+           - move presidential nomination to next player
+        """
+        # assert self.election_is_done()
         election_result = self.election_call()
 
         self.global_message("{}".format("JA!" if election_result else "NEIN!"))
@@ -228,6 +320,11 @@ class Game(object):
         self.votes = [None] * self.num_players
 
     def president_legislate(self, discard):
+        """
+        Performs the president's legislative action: discards the given policy
+        from the top 3. Returns True if successful (input was valid and in top 3)
+        and False if input was invalid.
+        """
         if discard in self.deck[:3]:
             self.deck.remove(discard)
             self.discard.append(discard)
@@ -237,6 +334,11 @@ class Game(object):
         else:
             return False
     def chancellor_legislate(self, enact):
+        """
+        Performs the chancellor's legislative action: enacts the given policy
+        from the top 2. Returns True if successful (input was valid and in top 3)
+        and False if input was invalid.
+        """
         if enact in self.deck[:2]:
             self.deck.remove(enact)
             self.discard.append(self.deck.pop(0))
@@ -250,6 +352,10 @@ class Game(object):
         else:
             return False
     def check_reshuffle(self):
+        """
+        Check if the deck needs to be reshuffled (has <= 3 policies remaining).
+        If it does, reshuffles the deck and announces this.
+        """
         if len(self.deck) <= 3: # NOTE: official rules say not to shuffle when there are 3 policies but this is a house rule
             self.deck.extend(self.discard)
             del self.discard[:]
@@ -259,6 +365,17 @@ class Game(object):
             self.global_message("Deck has been reshuffled.")
 
     def check_veto(self):
+        """
+        When veto power is enabled, checks if a veto should occur.
+         - If the result is still undeterminable, does nothing
+         - If both have agreed to the veto, performs the veto:
+           * Announces that a veto has occurred
+           * discards the policy that would have been enacted
+           * Increments Election Tracker
+         - If either declines to veto:
+           * Announces who (first) blocked the veto
+           * Passes the chosen policy
+        """
         if False in (self.president_veto_vote, self.chancellor_veto_vote): # no veto
             if self.president_veto_vote is False:
                 non_vetoer = "President " + str(self.president)
@@ -268,27 +385,28 @@ class Game(object):
             self.global_message("{} has refused to veto".format(non_vetoer))
             self.pass_policy(self.vetoable_polcy)
             self.vetoable_polcy = None
-            self.advance_presidency()
+            self.advance_presidency() # TODO: test presidential succession when veto occurrs
         elif self.president_veto_vote and self.chancellor_veto_vote: # veto
             self.global_message("VETO!")
 
             self.discard.append(self.vetoable_polcy)
             self.check_reshuffle()
             self.vetoable_polcy = None
-            self.anarchy_progress
 
-            self.anarchy_progress += 1
-            if self.anarchy_progress == 3:
-                self.anarchy()
+            self.anarchy_progress = 1
+            # counter must be at 0 because an election must have just succeeded
 
     def pass_policy(self, policy, on_anarchy=False):
+        """
+        Passes 'policy' (assumes it is either "F" or "L") by calling the appropriate function.
+        It then checks the deck's shuffle necessity and,
+        if we don't need to wait for a decision related to executive power (according to the game_state),
+        advances the presidency
+        """
         if policy == "L":
             self.pass_liberal()
         else:
             self.pass_fascist(on_anarchy)
-
-        if self.game_state == GameStates.GAME_OVER:
-            return
 
         self.global_message("BOARD STATE\n{} Fascist\n{} Liberal".format(self.fascist, self.liberal))
 
@@ -296,12 +414,19 @@ class Game(object):
         if not on_anarchy and self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
             self.advance_presidency()
     def pass_liberal(self):
+        """
+        Pass a liberal policy, announce this fact, and check if this creates a liberal victory
+        """
         self.liberal += 1
         self.global_message("A liberal policy was passed!")
 
         if self.liberal == 5:
             self.end_game("Liberal", "5 Liberal policies were enacted")
     def pass_fascist(self, on_anarchy):
+        """
+        Pass a fascist policy, announce this fact, check if this creates a fascist victory
+        If not on anarcy, initiates appropriate executive powers depending on policy number and player count
+        """
         self.fascist += 1
         self.global_message("A fascist policy was passed!")
 
@@ -312,6 +437,7 @@ class Game(object):
             return # any executive powers ignored in anarchy
 
         if self.num_players in (5,6) and self.fascist == 3:
+            # EXAMINE
             self.check_reshuffle()
             self.global_message("President ({}) is examining top 3 policies".format(self.president))
             self.president.send_message("Top three policies are: ")
@@ -324,36 +450,59 @@ class Game(object):
 
         if self.fascist == 4 or self.fascist == 5:
             self.set_game_state(GameStates.EXECUTION)
+
     def next_alive_player(self, starting_after):
+        """
+        Presidential-succession helper function: determines the next (alive)
+        player in the normal rotation after a given player.
+        """
         target_index = self.players.index(starting_after)
         while self.players[target_index] == starting_after or self.players[target_index] in self.dead_players:
             target_index += 1
             target_index %= self.num_players
         return self.players[target_index]
-
     def advance_presidency(self):
-        if self.last_nonspecial_president == None:
+        """
+        Passes presidency to next player in the rotation or, if the previous election was a special election,
+        resumes the normal rotation.
+        """
+        if self.last_nonspecial_president == None: # normal rotation
             self.president = self.next_alive_player(self.president)
-        else:
+        else: # returning from special election
             self.president = self.next_alive_player(self.last_nonspecial_president)
-            self.last_nonspecial_president = None
+            self.last_nonspecial_president = None # indicate that special-election is over
 
-        self.chancellor = None
+        self.chancellor = None # new president must now nominate chancellor
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
     def investigate(self, origin, target):
+        """
+        Simulates an investigation:
+         - Announces who is investigating whom
+         - Sends player their target's party affiliation
+        """
         origin.send_message("<{0}> party affiliation is <{0.party}>".format(target))
         self.global_message("{} has investigated {}".format(self, target))
     def deck_peek(self, who, num=3):
+        """
+        Sends player `who` a message indicating the top `num` policy tiles.
+        """
         who.send_message("".join(self.deck[:num]))
     def special_elect(self, target):
+        """
+        Simulate a special election:
+         - Set someone as the next president
+         - Save the current spot in the rotation to return to
+
+        Returns True if successful and False if input was invalid (tried to nominate self)
+        """
         if target == self.president:
             return False # cannot special elect self
 
         self.last_nonspecial_president = self.president
         self.president = target
         return True
-
+    # TODO: continue documentation
     def kill(self, target):
         if target.role == "Hitler":
             self.end_game("Liberal", "Hitler was killed")
@@ -460,7 +609,7 @@ class Game(object):
             # further commands affect game state
         elif command in ("nominate", "kill", "investigate") and from_player == self.president:
             # commands that involve the president selecting another player
-            target = self.str_to_player(args)
+            target = self.get_player(args)
             if target == None and not (command == "kill" and target.find("me too thanks") != -1 and self.game_state == GameStates.EXECUTION):
                 return "Error: Could not parse player."
             if command == "nominate":

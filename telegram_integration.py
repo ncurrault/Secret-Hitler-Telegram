@@ -63,16 +63,12 @@ def game_command_handler(bot, update):
     if game is None:
         bot.send_message(chat_id=chat_id, text="Error: no game in progress here")
     else:
-        player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
-        # create new player, only to be used if player is not in game currently
+        player = game.get_player_by_id(player_id) or Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+        # use player object from game if it exists
 
-        for candidate in game.players:
-            if candidate.id == player_id:
-                player = candidate
-                break
         try:
             reply = game.handle_message(player, command, args)
-            if reply:
+            if reply: # reply is None if no response is necessary
                 bot.send_message(chat_id=chat_id, text=reply)
         except Secret_Hitler.GameOverException:
             return
