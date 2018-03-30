@@ -1,6 +1,7 @@
 import random
 from enum import Enum
 
+BOT_USERNAME = "SecretHitlerGame_Bot"
 TESTING = (__name__ == "__main__") # test whenever this file is run directly
 # set TESTING to True to simulate a game locally
 if not TESTING:
@@ -597,8 +598,7 @@ class Game(object):
                 elif from_player in self.players:
                     return "Error: you've already joined"
                 self.add_player(from_player)
-                return "Welcome, {}! Make sure to message me directly (@SecretHitlerGame_Bot) before the game starts so I can send you secret information.".format(from_player.name)
-                # TODO: fancy link [message me directly](DM link)
+                return "Welcome, {}! Make sure to [message me directly](t.me/{}) before the game starts so I can send you secret information.".format(from_player.name, BOT_USERNAME)
             elif command == "leave":
                 self.remove_player(from_player)
                 return "Successfully left game!"

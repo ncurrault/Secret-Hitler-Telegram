@@ -69,8 +69,9 @@ def game_command_handler(bot, update):
 
         try:
             reply = game.handle_message(player, command, args)
+
             if reply: # reply is None if no response is necessary
-                bot.send_message(chat_id=chat_id, text=reply)
+                bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
         except Secret_Hitler.GameOverException:
             return
 
