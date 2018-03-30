@@ -1,8 +1,12 @@
 import random
 from enum import Enum
-import telegram_integration
 
-TESTING = False
+TESTING = (__name__ == "__main__") # test whenever this file is run directly
+# set TESTING to True to simulate a game locally
+if not TESTING:
+    import telegram_integration
+    # unnecessary in TESTING mode
+
 
 class Player(object):
     """
@@ -18,8 +22,10 @@ class Player(object):
         return self.name
 
     def send_message(self, msg):
-        # print "[ Message for {} ]\n{}".format(self, msg)
-        telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+        if TESTING:
+            print "[ Message for {} ]\n{}".format(self, msg)
+        else:
+            telegram_integration.bot.send_message(chat_id=self.id, text=msg)
 
     def set_role(self, _role):
         """
@@ -94,28 +100,34 @@ class Game(object):
         self.num_alive_players = self.num_players
         self.num_dead_players = 0
 
-        if self.num_players == 5 or self.num_players == 6: # 1F + H
-            fascists = random.sample(self.players, 2)
-        elif self.num_players == 7 or self.num_players == 8: # 2F + H
-            fascists = random.sample(self.players, 3)
-        elif self.num_players == 9 or self.num_players == 10: # 3F + H
-            fascists = random.sample(self.players, 4)
+        if TESTING:
+            roles = ["Liberal", "Hitler", "Liberal", "Fascist", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
+            for i in range(len(players)):
+                players[i].set_role(roles[i])
+                # NOTE: testing configuration does not "notify" fascists of night-phase info (if this breaks, it'll be apparent pretty quickly)
         else:
-            raise Exception("Invalid number of players")
-
-        for p in self.players:
-            if p == fascists[0]:
-                p.set_role("Hitler")
-                if self.num_players <= 6:
-                    p.send_message("Fascist: {}".format(fascists[1]))
-            elif p in fascists:
-                p.set_role("Fascist")
-                if self.num_players <= 6:
-                    p.send_message("Hitler: {}".format(fascists[0]))
-                else:
-                    p.send_message("Other Fascist{}: {}\nHitler: {}".format("s" if len(fascists) > 3 else "", ", ".join([ other_p.name for other_p in fascists[1:] if other_p != p ]), fascists[0]))
+            if self.num_players == 5 or self.num_players == 6: # 1F + H
+                fascists = random.sample(self.players, 2)
+            elif self.num_players == 7 or self.num_players == 8: # 2F + H
+                fascists = random.sample(self.players, 3)
+            elif self.num_players == 9 or self.num_players == 10: # 3F + H
+                fascists = random.sample(self.players, 4)
             else:
-                p.set_role("Liberal")
+                raise Exception("Invalid number of players")
+
+            for p in self.players:
+                if p == fascists[0]:
+                    p.set_role("Hitler")
+                    if self.num_players <= 6:
+                        p.send_message("Fascist: {}".format(fascists[1]))
+                elif p in fascists:
+                    p.set_role("Fascist")
+                    if self.num_players <= 6:
+                        p.send_message("Hitler: {}".format(fascists[0]))
+                    else:
+                        p.send_message("Other Fascist{}: {}\nHitler: {}".format("s" if len(fascists) > 3 else "", ", ".join([ other_p.name for other_p in fascists[1:] if other_p != p ]), fascists[0]))
+                else:
+                    p.set_role("Liberal")
 
         self.president = self.players[0]
         self.set_game_state(GameStates.CHANCY_NOMINATION)
@@ -124,8 +136,10 @@ class Game(object):
         """
         Send a message to all players using the chat specified in the constructor.
         """
-        # print "[ Message for everyone ]\n{}".format(msg)
-        telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+        if TESTING:
+            print "[ Message for everyone ]\n{}".format(msg)
+        else:
+            telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
 
     @staticmethod
     def str_to_policy(vote_str):
@@ -191,7 +205,6 @@ class Game(object):
         self.players.append(p)
         self.votes.append(None)
         self.num_players += 1
-        self.num_alive_players += 1
 
     def remove_player(self, p):
         """
@@ -564,7 +577,7 @@ class Game(object):
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
         "nominate", "kill", "investigate", "enact", "discard")
-    def handle_message(self, from_player, command, args):
+    def handle_message(self, from_player, command, args=""):
         # commands valid at any time
         if command == "listplayers":
             return self.list_players()
@@ -682,140 +695,108 @@ class Game(object):
                 else:
                     return "Error: Given policy not in top 2"
 
-# if TESTING:
-#     game = Game()
-#     game.add_player(Player("1", "A"))
-#     game.add_player(Player("2", "B"))
-#     game.add_player(Player("3", "C"))
-#     game.add_player(Player("4", "D"))
-#     game.add_player(Player("5", "E"))
-#     game.add_player(Player("6", "F"))
-#     game.add_player(Player("7", "G"))
-#     game.handle_message("3", "/startgame")
-#
-#     game.handle_message("1", "D") # 1
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("2", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "ja")
-#     game.handle_message("6", "nein")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("1", "L")
-#     #game.handle_message("1", "F")
-#     game.handle_message("4", "F")
-#     #game.handle_message("4", "L")
-#
-#     game.handle_message("2", "E") # 2
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("2", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "ja")
-#     game.handle_message("6", "nein")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("2", "L")
-#     #game.handle_message("2", "F")
-#     game.handle_message("5", "F")
-#     #game.handle_message("5", "L")
-#
-#     game.handle_message("2", "E") # inv
-#
-#     game.handle_message("3", "F") # 3
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("2", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "ja")
-#     game.handle_message("6", "nein")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("3", "L")
-#     #game.handle_message("3", "F")
-#     game.handle_message("6", "F")
-#     #game.handle_message("6", "L")
-#
-#     game.handle_message("3", "B") # se
-#
-#     game.handle_message("2", "G") # 4
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("2", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "ja")
-#     game.handle_message("6", "nein")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("2", "L")
-#     #game.handle_message("4", "F")
-#     game.handle_message("7", "F")
-#     #game.handle_message("7", "L")
-#
-#     game.handle_message("2", "me too thanks") # execution
-#
-#     game.handle_message("4", "A") # nein
-#
-#     game.handle_message("1", "nein")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "nein")
-#     game.handle_message("6", "ja")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("5", "A") # nein
-#
-#     game.handle_message("1", "nein")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "nein")
-#     game.handle_message("6", "ja")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("6", "A") # nein
-#
-#     game.handle_message("1", "nein")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "nein")
-#     game.handle_message("6", "ja")
-#     game.handle_message("7", "ja")
-#
-#     # anarchy
-#
-#     game.handle_message("7", "A") # nein
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "nein")
-#     game.handle_message("6", "ja")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("7", "f")
-#     game.handle_message("1", "l")
-#
-#     #veto decisison
-#     game.handle_message("1", "ja")
-#     game.handle_message("7", "nein")
-#
-#     game.handle_message("1", "D") # Fasc victory
-#
-#     game.handle_message("1", "ja")
-#     game.handle_message("3", "ja")
-#     game.handle_message("4", "nein")
-#     game.handle_message("5", "nein")
-#     game.handle_message("6", "ja")
-#     game.handle_message("7", "ja")
-#
-#     game.handle_message("1", "l")
-#     game.handle_message("4", "f")
-#
-#     #veto decisison
-#     game.handle_message("1", "nein")
-#     #game.handle_message("7", "ja")
+def test_game():
+    game = Game(None)
+    players = [
+        Player("1", "A"),
+        Player("2", "B"),
+        Player("3", "C"),
+        Player("4", "D"),
+        Player("5", "E"),
+        Player("6", "F"),
+        Player("7", "G") ]
+
+    for p in players:
+        game.add_player(p)
+
+    def passing_vote():
+        game.handle_message(players[0], "ja")
+        game.handle_message(players[1], "ja")
+        game.handle_message(players[2], "ja")
+        game.handle_message(players[3], "ja")
+        game.handle_message(players[4], "ja")
+        game.handle_message(players[5], "ja")
+        game.handle_message(players[6], "ja")
+    def handle_handle(player, command, args=""):
+        response = game.handle_message(player, command, args)
+        print "[{}] {} {}".format(player, command, args)
+        print "[Reply to {}] {}".format(player, response)
+
+    handle_handle(players[2], "startgame")
+
+    handle_handle(players[0], "nominate", "D") # election 1
+    passing_vote()
+
+    handle_handle(players[0], "discard", "L")
+    handle_handle(players[3], "enact", "F") # 0L / 1F
+
+    handle_handle(players[1], "nominate", "E") # election 2
+    passing_vote()
+    handle_handle(players[1], "discard", "L")
+    handle_handle(players[4], "enact", "F")
+
+    handle_handle(players[1], "investigate", "E")
+
+    handle_handle(players[2], "F") # election 3
+    passing_vote()
+    handle_handle(players[2], "discard", "L")
+    handle_handle(players[5], "enact", "F")
+
+    handle_handle(players[2], "nominate", "B") # special elect
+
+    handle_handle(players[1], "nominate", "G") # election 4
+    passing_vote()
+    handle_handle(players[1], "discard", "L")
+    handle_handle(players[6], "enact", "F")
+
+    handle_handle(players[1], "me too thanks") # execution
+
+    handle_handle(players[3], "A") # election 5 - should fail because dead people cannot vote and ties fail
+    handle_handle(players[0], "nein")
+    handle_handle(players[1], "ja") # players[1] is dead
+    handle_handle(players[2], "ja")
+    handle_handle(players[3], "nein")
+    handle_handle(players[4], "nein")
+    handle_handle(players[5], "ja")
+    handle_handle(players[6], "ja")
+
+    handle_handle(players[4], "nominate", "A") # election 6 - fail
+    handle_handle(players[0], "nein")
+    handle_handle(players[2], "ja")
+    handle_handle(players[3], "nein")
+    handle_handle(players[4], "nein")
+    handle_handle(players[5], "ja")
+    handle_handle(players[6], "ja")
+
+    handle_handle(players[5], "nominate", "A") # election 7 - fail
+    handle_handle(players[0], "nein")
+    handle_handle(players[2], "ja")
+    handle_handle(players[3], "nein")
+    handle_handle(players[4], "nein")
+    handle_handle(players[5], "ja")
+    handle_handle(players[6], "ja")
+
+    # anarchy, second bullet should be ignored
+
+    handle_handle(players[6], "nominate", "A")
+    passing_vote()
+
+    handle_handle(players[6], "discard", "s p i c y b o i")
+    handle_handle(players[0], "enact", "liberal") # check other policy nomenclature
+
+    handle_handle(players[0], "ja") #veto decisison
+    handle_handle(players[6], "nein")
+
+    handle_handle(players[0], "nominate", "D")
+    passing_vote()
+
+    handle_handle(players[0], "discard", "l")
+    handle_handle(players[3], "enact", "f")
+
+    #veto decisison
+    handle_handle(players[0], "nein")
+    # Fascist victory
+    # game.handle_message(players[6], "ja") # other veto vote shouldn't matter
+
+if TESTING:
+    test_game()
