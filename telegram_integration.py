@@ -13,6 +13,7 @@ dispatcher = updater.dispatcher
 game = None
 
 def start_handler(bot, update):
+    # TODO: specify that the DM concersation will contain private info 
     bot.send_message(chat_id=update.message.chat_id, text="Hi! This bot runs games of Secret Hitler via Telegram. Add me to a chat with all players and send the /newgame command there. This will specify where all public information is posted.")
 def help_handler(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="""Command List:

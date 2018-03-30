@@ -584,7 +584,7 @@ class Game(object):
                 elif from_player in self.players:
                     return "Error: you've already joined"
                 self.add_player(from_player)
-                return "{}, Welcome to Secret Hitler!".format(from_player.name)
+                return "Welcome, {}! Make sure to '/start' a personal chat with me before the game starts so you can receive private information.".format(from_player.name)
             elif command == "leave":
                 self.remove_player(from_player)
                 return "Successfully left game!"
