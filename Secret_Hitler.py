@@ -422,13 +422,15 @@ class Game(object):
         elif command == "changename":
             if from_player in self.players:
                 from_player.name = args
-                return "Successfully changed name to args[0]"
+                return "Successfully changed name to '{}'".format(args)
             else:
                 return "Must be in game to change nickname"
         elif self.game_state == GameStates.ACCEPT_PLAYERS:
             if command == "joingame":
                 if self.num_players == 10:
                     return "Error: game is full"
+                elif from_player in self.players:
+                    return "Error: you've already joined"
                 self.add_player(from_player)
                 return "{}, Welcome to Secret Hitler!".format(from_player.name)
             elif command == "leave":

@@ -11,7 +11,7 @@ A Telegram bot that allows users to play Secret Hitler.
   * /deckstats - get number of tiles in deck, discard, and public knowledge about policy-type distribution
   * /anarchystats - get status of election tracker (number of failed elections/anarchies)
 * In ACCEPT_PLAYERS game state
-  * /creategame - start a game with global messages in the current chat
+  * /newgame - start a game with global messages in the current chat
   * /joingame - join the game occurring in this chat
   * /leave - leave a game (only valid once it has not started)
   * /changename - change your nickname
