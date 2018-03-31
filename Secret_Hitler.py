@@ -544,35 +544,35 @@ class Game(object):
 
         if self.game_state == GameStates.CHANCY_NOMINATION:
             self.global_message("President {} must nominate a chancellor".format(self.president))
-            self.president.send_message("Pick your chancellor:\n" + self.list_players())
+            self.president.send_message("Pick your chancellor!\n(\"/nominate [player name or index]\")")
         elif self.game_state == GameStates.ELECTION:
             self.global_message("Election: Vote on President {} and Chancellor {}".format(self.president, self.chancellor))
             for p in self.players: # send individual messages to clarify who you're voting on
                 if p not in self.dead_players:
-                    p.send_message("{}/{} vote:".format(self.president, self.chancellor))
+                    p.send_message("{}/{} vote (\"/ja\" or \"/nein\"):".format(self.president, self.chancellor))
         elif self.game_state == GameStates.LEG_PRES:
             self.global_message("Legislative session in progress (waiting on President {})".format(self.president))
-            self.president.send_message("Pick a policy to discard:")
+            self.president.send_message("Pick a policy to discard!\n(\"/discard [POLICY]\")")
             self.deck_peek(self.president, 3)
         elif self.game_state == GameStates.LEG_CHANCY:
             self.global_message("Legislative session in progress (waiting on Chancellor {})".format(self.chancellor))
-            self.chancellor.send_message("Pick a policy to enact:")
+            self.chancellor.send_message("Pick a policy to enact!\n(\"/enact [POLICY]\")")
             self.deck_peek(self.chancellor, 2)
         elif self.game_state == GameStates.VETO_CHOICE:
             self.global_message("President ({}) and Chancellor ({}) are deciding whether to veto (both must agree to do so)".format(self.president, self.chancellor))
-            self.president.send_message("Would you like to veto?")
-            self.chancellor.send_message("Would you like to veto?")
+            self.president.send_message("Would you like to veto? (\"/ja\" or \"/nein\")")
+            self.chancellor.send_message("Would you like to veto? (\"/ja\" or \"/nein\")")
             self.president_veto_vote = None
             self.chancellor_veto_vote = None
         elif self.game_state == GameStates.INVESTIGATION:
             self.global_message("President ({}) must investigate another player".format(self.president))
-            self.president.send_message("Pick a player to investigate:\n" + self.list_players())
+            self.president.send_message("Pick a player to investigate!\n(\"/investigate [player name or index]\")" + self.list_players())
         elif self.game_state == GameStates.SPECIAL_ELECTION:
             self.global_message("Special Election: President ({}) must choose the next presidential candidate".format(self.president))
-            self.president.send_message("Pick the next presidential candidate:\n" + self.list_players())
+            self.president.send_message("Pick the next presidential candidate!\n(\"/nominate [player name or index]\")" + self.list_players())
         elif self.game_state == GameStates.EXECUTION:
             self.global_message("President ({}) must kill someone".format(self.president))
-            self.president.send_message("Pick someone to kill:\n" + self.list_players())
+            self.president.send_message("Pick someone to kill!\n(\"/kill [player name or index]\")" + self.list_players())
         elif self.game_state == GameStates.GAME_OVER:
             self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
             # reveal all player roles when the game has ended
