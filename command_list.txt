@@ -14,6 +14,7 @@ help - view details about command syntax
 
 -- Commands that require arguments --
 changename [NEW NAME] - change your nickname (default is your Telegram first name)
+whois [PLAYER NAME] - get link to a player's Telegram profile from their nickname
 nominate [PLAYER NAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
 kill [PLAYER NAME] - kill another player
 investigate [PLAYER NAME] - investigate the party affiliation of another player

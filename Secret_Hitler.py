@@ -579,8 +579,8 @@ class Game(object):
 
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
-        "nominate", "kill", "investigate", "enact", "discard")
-    MARKDOWN_COMMANDS = ("joingame", "blame") # these all use links/tags
+        "nominate", "kill", "investigate", "enact", "discard", "whois")
+    MARKDOWN_COMMANDS = ("joingame", "blame", "whois") # these all use links/tags
     def handle_message(self, from_player, command, args=""):
         # commands valid at any time
         if command == "listplayers":
@@ -626,6 +626,12 @@ class Game(object):
             return "Election tracker is at {}/3".format(self.anarchy_progress)
         elif command == "blame" and self.game_state == GameStates.ELECTION:
             return "People who haven't yet voted:\n" + self.list_nonvoters()
+        elif command == "whois":
+            target = self.get_player(args)
+            if target:
+                return target.get_markdown_tag()
+            else:
+                return "Usage: /whois [player name]"
         elif from_player not in self.players or from_player in self.dead_players:
             return "Error: Spectators/dead players cannot use commands that modify game data"
             # further commands affect game state
