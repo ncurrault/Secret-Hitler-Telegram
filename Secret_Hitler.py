@@ -585,6 +585,12 @@ class Game(object):
         # commands valid at any time
         if command == "listplayers":
             return self.list_players()
+        elif command == "whois":
+            target = self.get_player(args)
+            if target:
+                return target.get_markdown_tag()
+            else:
+                return "Usage: /whois \[player name\]"
         elif command == "changename":
             if from_player in self.players:
                 if args == "":
@@ -626,12 +632,6 @@ class Game(object):
             return "Election tracker is at {}/3".format(self.anarchy_progress)
         elif command == "blame" and self.game_state == GameStates.ELECTION:
             return "People who haven't yet voted:\n" + self.list_nonvoters()
-        elif command == "whois":
-            target = self.get_player(args)
-            if target:
-                return target.get_markdown_tag()
-            else:
-                return "Usage: /whois [player name]"
         elif from_player not in self.players or from_player in self.dead_players:
             return "Error: Spectators/dead players cannot use commands that modify game data"
             # further commands affect game state
