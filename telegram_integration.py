@@ -10,8 +10,6 @@ with open("API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
 
 bot = telegram.Bot(token=API_KEY)
-updater = Updater(token=API_KEY)
-dispatcher = updater.dispatcher
 
 game = None
 
@@ -38,8 +36,12 @@ def help_handler(bot, update):
 /ja - Ja!
 /nein - Nein
 /blame - list all players who haven't voted in an election""")
+
 def newgame_handler(bot, update):
-    global game
+    """
+    Create a new game (if doing so would overwrite an existing game in progress, only proceed if message contains "confirm")
+    """
+    global game # TODO: allow multiple games across different chats
     chat_id = update.message.chat.id
     if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER and update.message.text.find("confirm") == -1:
         bot.send_message(chat_id=chat_id, text="Warning: game already in progress here. Reply '/newgame confirm' to confirm")
@@ -48,6 +50,9 @@ def newgame_handler(bot, update):
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
 
 def parse_message(msg):
+    """
+    Helper function: split a messsage into its command and its arguments (two strings)
+    """
     command = msg.split()[0]
     if command.endswith(bot.username):
         command = command[1:command.find("@")]
@@ -62,6 +67,10 @@ def parse_message(msg):
 
 COMMAND_ALIASES = {"nom": "nominate", "blam": "blame"}
 def game_command_handler(bot, update):
+    """
+    Pass all commands that Secret_Hitler.Game can handle to game's handle_message method
+    Send outputs as replies via Telegram
+    """
     command, args = parse_message(update.message.text)
     if command in COMMAND_ALIASES.keys():
         command = COMMAND_ALIASES[command]
@@ -87,6 +96,9 @@ def game_command_handler(bot, update):
 
 # Credit (TODO: actual attribution): https://github.com/CaKEandLies/Telegram_Cthulhu/blob/master/cthulhu_game_bot.py#L63
 def feedback_handler(bot, update, args=None):
+    """
+    Store feedback from users in a text file.
+    """
     if args and len(args) > 0:
         feedback = open("feedback.txt", "a")
         feedback.write("\n")
@@ -106,6 +118,11 @@ def feedback_handler(bot, update, args=None):
                          text="Format: /feedback [feedback]")
 
 if __name__ == "__main__":
+    # Set up all command handlers
+
+    updater = Updater(token=API_KEY)
+    dispatcher = updater.dispatcher
+
     dispatcher.add_handler(CommandHandler('start', start_handler))
     dispatcher.add_handler(CommandHandler('help', help_handler))
     dispatcher.add_handler(CommandHandler('feedback', feedback_handler, pass_args=True))
@@ -119,6 +136,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
 
+    # allows viewing of exceptions
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO) # not sure exactly how this works

@@ -521,8 +521,14 @@ class Game(object):
         self.last_nonspecial_president = self.president
         self.president = target
         return True
-    # TODO: continue documentation
+
     def kill(self, target):
+        """
+        Simulate killing a player `target`.
+            If this player is Hitler, the game will end in a liberal victory
+            Otherwise, this player will be unable to vote, be nominated, or run for president
+            for the remainder of the game.
+        """
         if target.role == "Hitler":
             self.end_game("Liberal", "Hitler was killed")
         else:
@@ -531,6 +537,13 @@ class Game(object):
             self.num_dead_players += 1
 
     def anarchy(self):
+        """
+        Simulate "anarchy"
+         - pass the top policy
+         - ignore any powers
+         - reset election tracker
+         - and clear term limits
+        """
         self.check_reshuffle()
         self.pass_policy(self.deck.pop(0), on_anarchy=True)
 
@@ -538,11 +551,19 @@ class Game(object):
         self.anarchy_progress = 0
 
     def end_game(self, winning_party, reason):
+        """
+        End the game by announcing the victory, setting state to GameStates.GAME_OVER,
+        and raising a GameOverException (must be caught and handled)
+        """
         self.global_message("The {} team wins! ({}.)".format(winning_party, reason))
         self.set_game_state(GameStates.GAME_OVER)
         raise GameOverException("The {} team wins! ({}.)".format(winning_party, reason))
 
     def set_game_state(self, new_state):
+        """
+        Change the game state to new_state and perform any actions associated with that state's beginning:
+        Announce the state change, notify relevant president/chancellor about what they must do.
+        """
         self.game_state = new_state
 
         if self.game_state == GameStates.CHANCY_NOMINATION:
@@ -585,6 +606,11 @@ class Game(object):
         "nominate", "kill", "investigate", "enact", "discard", "whois")
     MARKDOWN_COMMANDS = ("joingame", "blame", "whois") # these all use links/tags
     def handle_message(self, from_player, command, args=""):
+        """
+        Handle the message "/command args" from from_player. Using the game state
+        and origin, perform the appropriate actions and change state if necessary.
+        Returns a string that the bot should send as a reply or None if no reply is necessary.
+        """
         # commands valid at any time
         if command == "listplayers":
             return self.list_players()
@@ -690,7 +716,6 @@ class Game(object):
 
                 self.check_veto()
                 return "Veto vote recorded"
-            # TODO: expedite the game by giving pres/chancy their policies before the election is finished
         elif command in ("enact", "discard"):
             policy = Game.str_to_policy(args)
             if policy is None:
@@ -714,14 +739,22 @@ class Game(object):
         else:
             return "/{} is not valid here".format(command)
     def TEST_handle(self, player, command, args=""):
+        """
+        TESTING FUNCTION: run self.handle_message(player, command, args) but print out
+        the input and output for debugging
+        """
         response = self.handle_message(player, command, args)
         print "[{}] {} {}".format(player, command, args)
         if response:
             print "[Reply to {}] {}".format(player, response)
-    def TEST_passing_vote(self):
+    def TEST_vote(self, should_pass=True):
+        """
+        TESTING FUNCTION: use TEST_handle to simulate a unanimous "ja" (or unanimous "nein" if should_pass=False)
+        This helps keep test-game code concise when you're not explicitly testing elections
+        """
         for p in self.players:
             if p not in self.dead_players:
-                self.TEST_handle(p, "ja")
+                self.TEST_handle(p, "ja" if should_pass else "nein")
 
 def test_game():
     game = Game(None)
@@ -740,27 +773,27 @@ def test_game():
     game.TEST_handle(players[2], "startgame")
 
     game.TEST_handle(players[0], "nominate", "D") # election 1
-    game.TEST_passing_vote()
+    game.TEST_vote()
 
     game.TEST_handle(players[0], "discard", "L")
     game.TEST_handle(players[3], "enact", "F") # 0L / 1F
 
     game.TEST_handle(players[1], "nominate", "E") # election 2
-    game.TEST_passing_vote()
+    game.TEST_vote()
     game.TEST_handle(players[1], "discard", "L")
     game.TEST_handle(players[4], "enact", "F")
 
     game.TEST_handle(players[1], "investigate", "E")
 
     game.TEST_handle(players[2], "nominate", "F") # election 3
-    game.TEST_passing_vote()
+    game.TEST_vote()
     game.TEST_handle(players[2], "discard", "L")
     game.TEST_handle(players[5], "enact", "F")
 
     game.TEST_handle(players[2], "nominate", "B") # special elect
 
     game.TEST_handle(players[1], "nominate", "G") # election 4
-    game.TEST_passing_vote()
+    game.TEST_vote()
     game.TEST_handle(players[1], "discard", "L")
     game.TEST_handle(players[6], "enact", "F")
 
@@ -794,7 +827,7 @@ def test_game():
     # anarchy, second bullet should be ignored
 
     game.TEST_handle(players[6], "nominate", "A")
-    game.TEST_passing_vote()
+    game.TEST_vote()
 
     game.TEST_handle(players[6], "discard", "s p i c y b o i")
     game.TEST_handle(players[0], "enact", "liberal") # check other policy nomenclature
@@ -803,7 +836,7 @@ def test_game():
     game.TEST_handle(players[6], "nein")
 
     game.TEST_handle(players[0], "nominate", "D")
-    game.TEST_passing_vote()
+    game.TEST_vote()
 
     game.TEST_handle(players[0], "discard", "l")
     game.TEST_handle(players[3], "enact", "f")
