@@ -78,9 +78,30 @@ def game_command_handler(bot, update):
         except Secret_Hitler.GameOverException:
             return
 
+# Credit (TODO: actual attribution): https://github.com/CaKEandLies/Telegram_Cthulhu/blob/master/cthulhu_game_bot.py#L63
+def feedback_handler(bot, update, args=None):
+    if len(args) > 0:
+        feedback = open("feedback.txt", "a")
+        feedback.write("\n")
+        feedback.write(update.message.from_user.first_name)
+        feedback.write("\n")
+        # Records User ID so that if feature is implemented, can message them
+        # about it.
+        feedback.write(str(update.message.from_user.id))
+        feedback.write("\n")
+        feedback.write(" ".join(args))
+        feedback.write("\n")
+        feedback.close()
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Thanks for the feedback!")
+    else:
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Format: /feedback [feedback]")
+
 if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('start', start_handler))
     dispatcher.add_handler(CommandHandler('help', help_handler))
+    dispatcher.add_handler(CommandHandler('feedback', feedback_handler))
 
     # memes
     dispatcher.add_handler(CommandHandler('wee', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hoo")) ))
