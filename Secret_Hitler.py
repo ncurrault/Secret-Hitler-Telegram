@@ -523,7 +523,6 @@ class Game(object):
         if target.role == "Hitler":
             self.end_game("Liberal", "Hitler was killed")
         else:
-            self.global_message("{} has killed {} (not Hitler)".format(self.president, target))
             self.dead_players.add(target)
             self.num_alive_players -= 1
             self.num_dead_players += 1
@@ -657,7 +656,7 @@ class Game(object):
                 else:
                     self.kill(target)
                     self.advance_presidency()
-                    from_player.send_message("You have killed {}.".format(target))
+                    self.global_message("{} has killed {}.".format(from_player, target))
             elif command == "investigate" and self.game_state == GameStates.INVESTIGATION:
                 self.investigate(from_player, target)
                 self.advance_presidency()
