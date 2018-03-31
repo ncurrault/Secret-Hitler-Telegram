@@ -592,7 +592,7 @@ class Game(object):
                 else:
                     new_name = args
                     for p in self.players:
-                        if p.name == new_name:
+                        if p.name.lower() == new_name.lower():
                             return "Error: name '{}' is already taken".format(new_name)
 
                     from_player.name = new_name
