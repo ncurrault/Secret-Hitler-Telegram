@@ -56,8 +56,12 @@ def parse_message(msg):
     else:
         args = " ".join(args)
     return command, args
+
+COMMAND_ALIASES = {"nom": "nominate", "blam": "blame"}
 def game_command_handler(bot, update):
     command, args = parse_message(update.message.text)
+    if command in COMMAND_ALIASES.keys():
+        command = COMMAND_ALIASES[command]
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
 
     global game
@@ -110,7 +114,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler))
 
-    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS, game_command_handler))
+    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + COMMAND_ALIASES.keys(), game_command_handler))
 
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
