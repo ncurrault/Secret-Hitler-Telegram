@@ -523,6 +523,7 @@ class Game(object):
         if target.role == "Hitler":
             self.end_game("Liberal", "Hitler was killed")
         else:
+            self.global_message("{} has killed {} (not Hitler)".format(self.president, target))
             self.dead_players.add(target)
             self.num_alive_players -= 1
             self.num_dead_players += 1
