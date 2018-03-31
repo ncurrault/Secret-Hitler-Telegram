@@ -105,7 +105,7 @@ def feedback_handler(bot, update, args=None):
 if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('start', start_handler))
     dispatcher.add_handler(CommandHandler('help', help_handler))
-    dispatcher.add_handler(CommandHandler('feedback', feedback_handler))
+    dispatcher.add_handler(CommandHandler('feedback', feedback_handler, pass_args=True))
 
     # memes
     dispatcher.add_handler(CommandHandler('wee', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hoo")) ))
