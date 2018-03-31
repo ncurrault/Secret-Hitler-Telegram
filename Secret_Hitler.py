@@ -689,7 +689,7 @@ class Game(object):
 
             if command == "discard" and self.game_state == GameStates.LEG_PRES and from_player == self.president:
                 if self.president_legislate(policy):
-                    return None # "Thanks"
+                    return "You have discarded {}".format(policy)
                 else:
                     return "Error: Given policy not in top 3"
             elif self.game_state == GameStates.LEG_CHANCY and from_player == self.chancellor:
