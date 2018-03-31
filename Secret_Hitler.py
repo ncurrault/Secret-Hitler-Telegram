@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import random
 from enum import Enum
 
@@ -590,7 +593,7 @@ class Game(object):
             if target:
                 return target.get_markdown_tag()
             else:
-                return "Usage: /whois \[player name\]"
+                return "Usage: /whois \[player name]"
         elif command == "changename":
             if from_player in self.players:
                 if args == "":

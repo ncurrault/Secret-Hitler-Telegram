@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import Secret_Hitler
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters
