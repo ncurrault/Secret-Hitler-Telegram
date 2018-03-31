@@ -84,7 +84,7 @@ def game_command_handler(bot, update):
 
 # Credit (TODO: actual attribution): https://github.com/CaKEandLies/Telegram_Cthulhu/blob/master/cthulhu_game_bot.py#L63
 def feedback_handler(bot, update, args=None):
-    if len(args) > 0:
+    if args and len(args) > 0:
         feedback = open("feedback.txt", "a")
         feedback.write("\n")
         feedback.write(update.message.from_user.first_name)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler))
 
-    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + COMMAND_ALIASES.keys(), game_command_handler))
+    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
 
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
