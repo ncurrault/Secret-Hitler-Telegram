@@ -4,14 +4,17 @@ from __future__ import unicode_literals
 import Secret_Hitler
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters
+
+from telegram.error import TelegramError
 import logging
 
-with open("API_key.txt", "r") as f:
+import sys
+import os
+
+with open("ignore/API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
 
 bot = telegram.Bot(token=API_KEY)
-
-game = None
 
 def start_handler(bot, update):
     # TODO: specify that the DM conversation will contain private info
@@ -100,7 +103,7 @@ def feedback_handler(bot, update, args=None):
     Store feedback from users in a text file.
     """
     if args and len(args) > 0:
-        feedback = open("feedback.txt", "a")
+        feedback = open("ignore/feedback.txt", "a")
         feedback.write("\n")
         feedback.write(update.message.from_user.first_name)
         feedback.write("\n")
@@ -117,10 +120,33 @@ def feedback_handler(bot, update, args=None):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Format: /feedback [feedback]")
 
+# def handle_error(bot, update, error):
+#     try:
+#         raise error
+#     except TelegramError:
+#         logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
+
+def save_game(bot, update):
+    if game is not None:
+        fname = "ignore/aborted_game.p"
+        i = 0
+        while os.path.exists(fname):
+            fname = "ignore/aborted_game_{}.p".format(i)
+            i += 1 # ensures multiple games can be saved
+
+        game.save(fname)
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Saved game in current state as '{}'".format(fname))
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        game = Secret_Hitler.Game.load(sys.argv[1])
+    else:
+        game = None
+
     # Set up all command handlers
 
-    updater = Updater(token=API_KEY)
+    updater = Updater(bot=bot)
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler('start', start_handler))
@@ -135,6 +161,9 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler))
 
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
+
+    dispatcher.add_handler(CommandHandler('savegame', save_game))
+    # dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions
     logging.basicConfig(
