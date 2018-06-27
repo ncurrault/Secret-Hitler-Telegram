@@ -16,29 +16,20 @@ with open("ignore/API_key.txt", "r") as f:
 
 bot = telegram.Bot(token=API_KEY)
 
-def start_handler(bot, update):
-    # TODO: specify that the DM conversation will contain private info
-    bot.send_message(chat_id=update.message.chat_id, text="Hi! This bot runs games of Secret Hitler via Telegram. Add me to a chat with all players and send the /newgame command there. This will specify where all public information is posted.")
-def help_handler(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text="""Command List:
-/changename [NEW NAME] - change your nickname (default is your Telegram first name)
-/nominate [PLAYER NAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
-/kill [PLAYER NAME] - kill another player
-/investigate [PLAYER NAME] - investigate the party affiliation of another player
-/enact [POLICY] - as chancellor, pick a policy to enact
-/discard [POLICY] - as president or chancellor, pick a policy to discard
+def get_static_handler(command):
+    """
+    Given a string command, returns a CommandHandler for that string that
+    responds to messages with the content of static_responses/[command].txt
 
-/listplayers - list all players with annotations for Pres, Chancy, term-limits, and deaths
-/boardstats - list the number of each type of policy passed
-/deckstats - get number of tiles in deck, discard, and public info about type distribution
-/anarchystats - get status of election tracker
-/newgame - start a game with global messages in the current chat
-/joingame - join the game occurring in a chat
-/leave - leave a game (only valid if it has not started)
-/startgame - deal out roles and begin the game!
-/ja - Ja!
-/nein - Nein
-/blame - list all players who haven't voted in an election""")
+    Throws IOError if file does not exist or something
+    """
+    
+    f = open("static_responses/{}.txt".format(command), "r")
+    response = f.read()
+
+    return CommandHandler(command, \
+        ( lambda bot, update : \
+        bot.send_message(chat_id=update.message.chat.id, text=response) ) )
 
 def newgame_handler(bot, update):
     """
@@ -149,8 +140,9 @@ if __name__ == "__main__":
     updater = Updater(token=API_KEY) # TODO init with bot=bot -> spooky errors?
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler('start', start_handler))
-    dispatcher.add_handler(CommandHandler('help', help_handler))
+    dispatcher.add_handler(get_static_handler("start"))
+    dispatcher.add_handler(get_static_handler("help"))
+    dispatcher.add_handler(get_static_handler("changelog"))
     dispatcher.add_handler(CommandHandler('feedback', feedback_handler, pass_args=True))
 
     # memes
