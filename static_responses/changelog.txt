@@ -2,19 +2,21 @@ NEW
 
 - /joingame accepts optional nickname argument
 - implement Amrita's checker for sliding into those DMs
+- /blame tag whoever is relevant, not just elections (make /blame actually good)
+- /blame should be a valid command for spectators
+- rate-limit /blame
 
 IN PROGRESS
+
+- allow multiple simultaneous games in different chats
 
 CUMMING SOON
 
 - cursed content 1% of the time
 - spectator mode where one gets role info
 - allow arguments to creategame to disallow certain numbers of players
-- blame should be a valid command for spectators
-- /blame tag whoever is relevant, not just elections (make /blame actually good)
 - tag everyone when game starts
 - keep a string representing the history of tickets and policies, accessible via command
 - Have the bot message killed players to break the news
 - disallow single digit names
 - auto-ja, auto-nein, auto-ja-until-HZ, auto-nein-until-HZ, auto-cancel
-- rate-limit /blame

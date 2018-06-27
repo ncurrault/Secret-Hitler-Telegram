@@ -3,10 +3,12 @@ from __future__ import unicode_literals
 
 import random
 import pickle
+import time
 from enum import Enum
 from telegram.error import Unauthorized
 
 BOT_USERNAME = "SecretHitlerGame_Bot"
+BLAME_RATELIMIT = 69 # seconds
 TESTING = (__name__ == "__main__") # test whenever this file is run directly
 # set TESTING to True to simulate a game locally
 if not TESTING:
@@ -24,6 +26,7 @@ class Player(object):
         """
         self.id = _id
         self.name = _name
+        self.last_blame = time.time() - BLAME_RATELIMIT
     def __str__(self):
         return self.name
 
@@ -698,8 +701,31 @@ class Game(object):
             return "{} tiles in deck, {} in discard. {} F / {} L in deck/discard (combined)".format(len(self.deck), len(self.discard), 11 - self.fascist, 6 - self.liberal)
         elif command == "anarchystats":
             return "Election tracker is at {}/3".format(self.anarchy_progress)
-        elif command == "blame" and self.game_state == GameStates.ELECTION:
-            return "People who haven't yet voted:\n" + self.list_nonvoters()
+        elif command == "blame":
+            if time.time() - self.last_blame < BLAME_RATELIMIT:
+                from_player.send_message("Hey, slow down!")
+                # avoid spam by respding with DM (good luck if there's Darbs playing)
+
+            self.last_blame = time.time()
+            pres_tag = self.president.get_markdown_tag()
+            chancy_tag = self.chancellor.get_markdown_tag()
+
+            if self.game_state == GameStates.ELECTION:
+                return "People who haven't yet voted:\n" + self.list_nonvoters()
+            elif self.game_state == GameStates.CHANCY_NOMINATION:
+                return "{} needs to nominate a chancellor!".format(pres_tag)
+            elif self.game_state == GameStates.LEG_PRES:
+                return "{} needs to discard a policy!".format(pres_tag)
+            elif self.game_state == GameStates.LEG_CHANCY:
+                return "{} needs to enact a policy!".format(chancy_tag)
+            elif self.game_state == GameStates.VETO_CHOICE:
+                return "{} and {} need to decide whether to veto!".format(pres_tag, chancy_tag)
+            elif self.game_state == GameStates.INVESTIGATION:
+                return "{} needs to pick someone to investigate!".format(pres_tag)
+            elif self.game_state == GameStates.SPECIAL_ELECTION:
+                return "{} needs to pick someone to special elect!".format(pres_tag)
+            elif self.game_state == GameStates.EXECUTION:
+                return "{} needs to pick someone to kill!".format(pres_tag)
         elif from_player not in self.players or from_player in self.dead_players:
             return "Error: Spectators/dead players cannot use commands that modify game data"
             # further commands affect game state
