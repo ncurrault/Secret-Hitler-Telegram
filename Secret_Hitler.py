@@ -99,8 +99,7 @@ class Game(object):
         - begin presidential rotation with the first presidnet nominating their chancellor
         """
 
-        # random.shuffle(self.players)
-        # NOTE: players will be seated in order they join unless this is uncommented
+        random.shuffle(self.players) # randomize seating order
 
         self.num_players = len(self.players)
         self.num_alive_players = self.num_players
