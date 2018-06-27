@@ -2,11 +2,14 @@ NEW
 
 - /joingame accepts optional nickname argument
 
+IN PROGRESS
+
+- implement Amrita's checker for sliding into those DMs
+
 CUMMING SOON
 
 - cursed content 1% of the time
 - spectator mode where one gets role info
-- implement Amrita's checker for sliding into those DMs
 - allow arguments to creategame to disallow certain numbers of players
 - blame should be a valid command for spectators
 - /blame tag whoever is relevant, not just elections (make /blame actually good)
