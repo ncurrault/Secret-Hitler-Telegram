@@ -1,10 +1,9 @@
 NEW
 
 - /joingame accepts optional nickname argument
+- implement Amrita's checker for sliding into those DMs
 
 IN PROGRESS
-
-- implement Amrita's checker for sliding into those DMs
 
 CUMMING SOON
 

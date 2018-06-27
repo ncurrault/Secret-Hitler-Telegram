@@ -632,7 +632,7 @@ class Game(object):
             try:
                 p.send_message(test_msg)
             except Unauthorized as e:
-                return p # TODO: update spec
+                return p
         return None
 
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
@@ -681,13 +681,15 @@ class Game(object):
                 return "Successfully left game!"
             elif command == "startgame":
                 blocked = self.get_blocked_player()
-                if blocked is None:
-                    if self.num_players >= 5:
-                        self.start_game()
-                    else:
-                        return "Error: only {} players".format(self.num_players)
-                else:
-                    return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me.".format(BOT_USERNAME, blocked.get_markdown_tag())
+                if blocked:
+                    return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me." \
+                        .format(BOT_USERNAME, blocked.get_markdown_tag()) \
+                        .replace("_","\\_") # some Markdown escaping may be necessary
+                if self.num_players < 5:
+                    return "Error: only {} players".format(self.num_players)
+
+                self.start_game()
+                return
             else:
                 return "Error: game has not started"
         if command == "boardstats":
