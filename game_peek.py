@@ -10,5 +10,4 @@ import os
 
 # Run python -i game_peek.py [GAME SAVE] to interact with, get info from, and resave a game
 
-with open(sys.argv[1], "r") as f:
-    game = pickle.load(f)
+game = Secret_Hitler.game.load(sys.argv[1])
