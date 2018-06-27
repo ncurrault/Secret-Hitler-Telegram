@@ -431,11 +431,14 @@ class Game(object):
         else:
             self.pass_fascist(on_anarchy)
 
-        self.global_message("BOARD STATE\n{} Fascist\n{} Liberal".format(self.fascist, self.liberal))
-
         self.check_reshuffle()
         if not on_anarchy and self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
             self.advance_presidency()
+        
+        self.global_message("NEW BOARD STATE\n" \
+            + "{} Fascist\n{} Liberal\n".format(self.fascist, self.liberal) \
+            + "{} in draw pile, {} in discard pile".format(len(self.deck), len(self.discard))
+
     def pass_liberal(self):
         """
         Pass a liberal policy, announce this fact, and check if this creates a liberal victory

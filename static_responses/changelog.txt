@@ -5,18 +5,21 @@ NEW
 - /blame tag whoever is relevant, not just elections (make /blame actually good)
 - /blame should be a valid command for spectators
 - rate-limit /blame
+- reiterate all stats when a policy is played
 
 IN PROGRESS
 
-- allow multiple simultaneous games in different chats
 
 CUMMING SOON
 
-- cursed content 1% of the time
-- spectator mode where one gets role info
+- warn a Fascist if they are about to kill Hitler
 - allow arguments to creategame to disallow certain numbers of players
-- tag everyone when game starts
-- keep a string representing the history of tickets and policies, accessible via command
 - Have the bot message killed players to break the news
 - disallow single digit names
+- spectator mode where one gets role info
+- keep a string representing the history of tickets and policies, accessible via command
+   - furthermore, implement an official claim system so pres/chancy can log claims
+- cursed content 1% of the time
+- allow multiple simultaneous games in different chats
 - auto-ja, auto-nein, auto-ja-until-HZ, auto-nein-until-HZ, auto-cancel
+- kill @spaceandgay automatically
