@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import random
+import pickle
 from enum import Enum
 
 BOT_USERNAME = "SecretHitlerGame_Bot"
@@ -599,6 +600,23 @@ class Game(object):
         elif self.game_state == GameStates.GAME_OVER:
             self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
             # reveal all player roles when the game has ended
+
+
+    def save(self, fname):
+        """
+        Save all current game info to a file
+        """
+
+        with open(fname, "w") as out_file:
+            pickle.dump(self, out_file)
+
+    @classmethod
+    def load(cls, fname):
+        """
+        Load a game from a file (output by save)
+        """
+        with open(fname, "r") as in_file:
+            return pickle.load(in_file)
 
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
