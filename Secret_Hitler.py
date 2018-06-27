@@ -619,24 +619,21 @@ class Game(object):
         with open(fname, "r") as in_file:
             return pickle.load(in_file)
 
-    def get_blocked_players(self, test_msg="Trying to start game!"):
+    def get_blocked_player(self, test_msg="Trying to start game!"):
         """
         This function attempts to send all registered players a message to
-        ensure that direct messages work with them. If a player has not
+        ensure that direct messages work with them. If we find a player has not
         messaged the bot or has blocked it, the message will fail.  This
-        function will return a list of all Player objects that corresponding to
-        these players with failed messages. If everybody was good
-        (i.e. we're good to start the game), returns [].
+        function will return this player's Player object. If everybody was good
+        (i.e. we're good to start the game), returns None.
         """
 
-        blocked_players = []
         for p in self.players:
             try:
                 p.send_message(test_msg)
             except Unauthorized as e:
-                blocked_players.append(p)
-            # TODO: this still misclassifies some people as blocked
-        return blocked_players
+                return p # TODO: update spec
+        return None
 
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
@@ -683,16 +680,14 @@ class Game(object):
                 self.remove_player(from_player)
                 return "Successfully left game!"
             elif command == "startgame":
-                blocked = self.get_blocked_players()
-                if len(blocked) == 0:
+                blocked = self.get_blocked_player()
+                if blocked is None:
                     if self.num_players >= 5:
                         self.start_game()
                     else:
                         return "Error: only {} players".format(self.num_players)
                 else:
-                    return "All players must have messaged me in the past and not blocked me." \
-                        + "These players must message/unblock me:\n" \
-                        + "\n".join([p.get_markdown_tag() for p in self.players])
+                    return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me.".format(BOT_USERNAME, blocked.get_markdown_tag())
             else:
                 return "Error: game has not started"
         if command == "boardstats":

@@ -116,11 +116,11 @@ def feedback_handler(bot, update, args=None):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Format: /feedback [feedback]")
 
-def handle_error(bot, update, error):
-    try:
-        raise error
-    except TelegramError:
-        logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
+# def handle_error(bot, update, error):
+#     try:
+#         raise error
+#     except TelegramError:
+#         logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
 
 def save_game(bot, update):
     if game is not None:
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
 
     dispatcher.add_handler(CommandHandler('savegame', save_game))
-    dispatcher.add_error_handler(handle_error)
+    # dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions
     logging.basicConfig(
