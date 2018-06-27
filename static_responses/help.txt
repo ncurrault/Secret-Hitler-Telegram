@@ -1,19 +1,24 @@
-Command List:
-/changename [NEW NAME] - change your nickname (default is your Telegram first name)
-/nominate [PLAYER NAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
-/kill [PLAYER NAME] - kill another player
-/investigate [PLAYER NAME] - investigate the party affiliation of another player
-/enact [POLICY] - as chancellor, pick a policy to enact
-/discard [POLICY] - as president or chancellor, pick a policy to discard
+-- Commands with no arguments --
+listplayers - list all players with annotations for Pres, Chancy, term-limits, and deaths
+boardstats - list the number of each type of policy passed
+deckstats - get number of tiles in deck, discard, and public info about type distribution
+anarchystats - get status of election tracker
+newgame - start a game with global messages in the current chat
+leave - leave a game (only valid if it has not started)
+startgame - deal out roles and begin the game!
+ja - Ja!
+nein - Nein
+blame - list all players who haven't voted in an election
+help - view details about command syntax
 
-/listplayers - list all players with annotations for Pres, Chancy, term-limits, and deaths
-/boardstats - list the number of each type of policy passed
-/deckstats - get number of tiles in deck, discard, and public info about type distribution
-/anarchystats - get status of election tracker
-/newgame - start a game with global messages in the current chat
-/joingame - join the game occurring in a chat
-/leave - leave a game (only valid if it has not started)
-/startgame - deal out roles and begin the game!
-/ja - Ja!
-/nein - Nein
-/blame - list all players who haven't voted in an election
+-- Commands that require arguments --
+changename [NEW NAME] - change your nickname
+whois [PLAYER NAME] - get link to a player's Telegram profile from their nickname
+nominate [PLAYER NAME] - nominate someone for chancellor or presidential candidate (in the case of special election)
+kill [PLAYER NAME] - kill another player
+investigate [PLAYER NAME] - investigate the party affiliation of another player
+enact [POLICY] - as chancellor, pick a policy to enact
+discard [POLICY] - as president or chancellor, pick a policy to discard
+
+-- Commands with optional arguments --
+joingame [[nickname]] - join the game occurring in a chat. If no argument is given, default to your Telegram first name

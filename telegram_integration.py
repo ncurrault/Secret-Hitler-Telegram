@@ -23,7 +23,7 @@ def get_static_handler(command):
 
     Throws IOError if file does not exist or something
     """
-    
+
     f = open("static_responses/{}.txt".format(command), "r")
     response = f.read()
 
@@ -74,7 +74,12 @@ def game_command_handler(bot, update):
     if game is None:
         bot.send_message(chat_id=chat_id, text="Error: no game in progress here")
     else:
-        player = game.get_player_by_id(player_id) or Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+        player = game.get_player_by_id(player_id)
+        if not player: # player's first message can set their nickname
+            if args:
+                player = Secret_Hitler.Player(player_id, args)
+            else:
+                player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
         # use player object from game if it exists
 
         try:
