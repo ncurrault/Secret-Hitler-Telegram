@@ -200,7 +200,8 @@ class Game(object):
         if name.isdigit() and int(name) <= 10:
             return "Error: name cannot be a number between 1 and 10"
 
-        if name.endswith("(TL)") or name.endswith("(P)") or name.endswith("(C)") or name.endswith("(CNH)"):
+        if name.endswith("(TL)") or name.endswith("(P)") or name.endswith("(C)")
+            or name.endswith("(RIP)") or name.endswith("(CNH)"):
             return "Error: names cannot spoof the annotations from /listplayers"
 
         for p in self.players:
