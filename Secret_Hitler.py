@@ -26,7 +26,6 @@ class Player(object):
         """
         self.id = _id
         self.name = _name
-        self.last_blame = time.time() - BLAME_RATELIMIT
     def __str__(self):
         return self.name
 
@@ -96,6 +95,7 @@ class Game(object):
         self.anarchy_progress = 0
 
         self.game_state = GameStates.ACCEPT_PLAYERS
+        self.last_blame = time.time() - BLAME_RATELIMIT
     def start_game(self):
         """
         Starts a game:
@@ -434,10 +434,11 @@ class Game(object):
         self.check_reshuffle()
         if not on_anarchy and self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
             self.advance_presidency()
-        
+
         self.global_message("NEW BOARD STATE\n" \
             + "{} Fascist\n{} Liberal\n".format(self.fascist, self.liberal) \
             + "{} in draw pile, {} in discard pile".format(len(self.deck), len(self.discard))
+        )
 
     def pass_liberal(self):
         """
