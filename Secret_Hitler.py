@@ -712,13 +712,14 @@ class Game(object):
                 self.remove_player(from_player)
                 return "Successfully left game!"
             elif command == "startgame":
+                if self.num_players < 5:
+                    return "Error: only {} players".format(self.num_players)
+                
                 blocked = self.get_blocked_player()
                 if blocked:
                     return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me." \
                         .format(BOT_USERNAME, blocked.get_markdown_tag()) \
                         .replace("_","\\_") # some Markdown escaping may be necessary
-                if self.num_players < 5:
-                    return "Error: only {} players".format(self.num_players)
 
                 self.start_game()
                 return
