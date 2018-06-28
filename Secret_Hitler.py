@@ -197,6 +197,12 @@ class Game(object):
             if name.lower() == forbidden_name:
                 return "Error: {} is not a valid name because it is too similar to {}".format(name, forbidden_name)
 
+        if name.isdigit() and int(name) <= 10:
+            return "Error: name cannot be a number between 1 and 10"
+
+        if name.endswith("(TL)") or name.endswith("(P)") or name.endswith("(C)") or name.endswith("(CNH)"):
+            return "Error: names cannot spoof the annotations from /listplayers"
+
         for p in self.players:
             if p.name.lower() == name.lower():
                 return "Error: name '{}' is already taken".format(name)
