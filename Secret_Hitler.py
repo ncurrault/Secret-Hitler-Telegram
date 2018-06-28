@@ -5,7 +5,7 @@ import random
 import pickle
 import time
 from enum import Enum
-from telegram.error import Unauthorized
+from telegram.error import Unauthorized, TelegramError
 
 BOT_USERNAME = "SecretHitlerGame_Bot"
 BLAME_RATELIMIT = 69 # seconds
@@ -13,6 +13,8 @@ TESTING = (__name__ == "__main__") # test whenever this file is run directly
 # set TESTING to True to simulate a game locally
 if not TESTING:
     import telegram_integration
+    telegram_errors = [ ]
+
     # unnecessary in TESTING mode
 
 
@@ -29,11 +31,18 @@ class Player(object):
     def __str__(self):
         return self.name
 
-    def send_message(self, msg):
+    def send_message(self, msg, supress_errors=True):
         if TESTING:
             print "[ Message for {} ]\n{}".format(self, msg)
         else:
-            telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+            try:
+                telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+            except TelegramError as e:
+                if supress_errors:
+                    telegram_errors.append(e)
+                    # network issues can cause errors in Telegram
+                else:
+                    raise e
     def get_markdown_tag(self):
         return "[{}](tg://user?id={})".format(self.name, self.id)
 
@@ -145,14 +154,21 @@ class Game(object):
         self.president = self.players[0]
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
-    def global_message(self, msg):
+    def global_message(self, msg, supress_errors=True):
         """
         Send a message to all players using the chat specified in the constructor.
         """
         if TESTING:
             print "[ Message for everyone ]\n{}".format(msg)
         else:
-            telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+            try:
+                telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+            except TelegramError as e:
+                if supress_errors:
+                    telegram_errors.append(e)
+                    # network issues can cause errors in Telegram
+                else:
+                    raise e
 
     @staticmethod
     def str_to_policy(vote_str):
@@ -662,7 +678,7 @@ class Game(object):
 
         for p in self.players:
             try:
-                p.send_message(test_msg)
+                p.send_message(test_msg, supress_errors=False)
             except Unauthorized as e:
                 return p
         return None

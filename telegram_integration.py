@@ -87,11 +87,19 @@ def game_command_handler(bot, update):
         try:
             reply = game.handle_message(player, command, args)
 
+            # pass all supressed errors (if any) directly to the handler in
+            # the order that they occurred
+            while len(Secret_Hitler.telegram_errors) > 0:
+                handle_error(bot, update, Secret_Hitler.telegram_errors.pop(0))
+            # TODO: it would be cleaner to just have a consumer thread handling
+            # these errors as they occur
+
             if reply: # reply is None if no response is necessary
                 if command in Secret_Hitler.Game.MARKDOWN_COMMANDS: # these require links/tagging
                     bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
                 else:
                     bot.send_message(chat_id=chat_id, text=reply)
+
         except Secret_Hitler.GameOverException:
             return
 
@@ -118,11 +126,11 @@ def feedback_handler(bot, update, args=None):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Format: /feedback [feedback]")
 
-# def handle_error(bot, update, error):
-#     try:
-#         raise error
-#     except TelegramError:
-#         logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
+def handle_error(bot, update, error):
+    try:
+        raise error
+    except TelegramError:
+        logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
 
 def save_game(bot, update):
     if game is not None:
@@ -162,7 +170,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
 
     dispatcher.add_handler(CommandHandler('savegame', save_game))
-    # dispatcher.add_error_handler(handle_error)
+    dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions
     logging.basicConfig(
