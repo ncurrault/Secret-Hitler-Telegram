@@ -11,10 +11,11 @@ NEW
 
 UNTESTED
 
+- Have the bot message killed players to break the news
+
 CUMMING SOON
 
 - allow arguments to creategame to disallow certain numbers of players
-- Have the bot message killed players to break the news
 - track and annotate CNH
 - spectator mode where one gets role info
 - keep a string representing the history of tickets and policies, accessible via command

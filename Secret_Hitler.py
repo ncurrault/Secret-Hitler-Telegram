@@ -200,7 +200,7 @@ class Game(object):
         if name.isdigit() and int(name) <= 10:
             return "Error: name cannot be a number between 1 and 10"
 
-        if name.endswith("(TL)") or name.endswith("(P)") or name.endswith("(C)")
+        if name.endswith("(TL)") or name.endswith("(P)") or name.endswith("(C)") \
             or name.endswith("(RIP)") or name.endswith("(CNH)"):
             return "Error: names cannot spoof the annotations from /listplayers"
 
@@ -714,7 +714,7 @@ class Game(object):
             elif command == "startgame":
                 if self.num_players < 5:
                     return "Error: only {} players".format(self.num_players)
-                
+
                 blocked = self.get_blocked_player()
                 if blocked:
                     return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me." \
@@ -801,6 +801,9 @@ class Game(object):
                     self.kill(target)
                     self.advance_presidency()
                     self.global_message("{} has killed {}.".format(from_player, target))
+                    target.send_message("You are now dead. RIP. Remember " + \
+                        "that dead players SHOULD NOT TALK, reveal their " + \
+                        "secret role, or otherwise influence the game!" )
             elif command == "investigate" and self.game_state == GameStates.INVESTIGATION:
                 self.investigate(from_player, target)
                 self.advance_presidency()
