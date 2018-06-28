@@ -95,6 +95,8 @@ class Game(object):
         self.anarchy_progress = 0
 
         self.game_state = GameStates.ACCEPT_PLAYERS
+
+    def reset_blame_ratelimit(self):
         self.last_blame = time.time() - BLAME_RATELIMIT
     def start_game(self):
         """
@@ -109,6 +111,7 @@ class Game(object):
         self.num_players = len(self.players)
         self.num_alive_players = self.num_players
         self.num_dead_players = 0
+        self.reset_blame_ratelimit()
 
         if TESTING:
             roles = ["Liberal", "Fascist", "Liberal", "Hitler", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
@@ -573,6 +576,7 @@ class Game(object):
         Announce the state change, notify relevant president/chancellor about what they must do.
         """
         self.game_state = new_state
+        self.reset_blame_ratelimit()
 
         if self.game_state == GameStates.CHANCY_NOMINATION:
             self.global_message("President {} must nominate a chancellor".format(self.president))
@@ -708,11 +712,16 @@ class Game(object):
         elif command == "blame":
             if time.time() - self.last_blame < BLAME_RATELIMIT:
                 from_player.send_message("Hey, slow down!")
+                return
                 # avoid spam by respding with DM (good luck if there's Darbs playing)
 
             self.last_blame = time.time()
-            pres_tag = self.president.get_markdown_tag()
-            chancy_tag = self.chancellor.get_markdown_tag()
+            pres_tag = "(president)"
+            chancy_tag = "(chancellor)"
+            if self.president is not None:
+                pres_tag = self.president.get_markdown_tag()
+            if self.chancellor is not None:
+                chancy_tag = self.chancellor.get_markdown_tag()
 
             if self.game_state == GameStates.ELECTION:
                 return "People who haven't yet voted:\n" + self.list_nonvoters()
