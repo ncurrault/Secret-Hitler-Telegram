@@ -745,7 +745,17 @@ class Game(object):
         elif command in ("nominate", "kill", "investigate") and from_player == self.president:
             # commands that involve the president selecting another player
             target = self.get_player(args)
-            if target == None and not (command == "kill" and args.find("me too thanks") != -1 and self.game_state == GameStates.EXECUTION):
+            # TODO: username restrict "me too thanks" and "Hitler"
+            if self.game_state == GameStates.EXECUTION and command == "kill":
+                if args.lower().find("me too thanks") != -1:
+                    target = from_player
+                elif from_player.party == "Fascist" and args.lower().find("hitler") != -1:
+                    for p in players:
+                        if p.role == "Hitler":
+                            target = p
+                            break
+
+            if target == None:
                 return "Error: Could not parse player."
             if command == "nominate":
                 if self.game_state == GameStates.CHANCY_NOMINATION:
@@ -762,10 +772,9 @@ class Game(object):
             elif command == "kill" and self.game_state == GameStates.EXECUTION:
                 if from_player == target:
                     return "You are about to kill yourself (technically allowed by the rules). Reply '/kill me too thanks' to confirm suicide."
-                elif args.find("me too thanks") != -1:
-                    self.kill(from_player)
-                    self.advance_presidency()
-                    return "You have killed yourself."
+                elif from_player.role == "Fascist" and target.role == "Hitler":
+                    from_player.send_message("It looks like you are trying to kill Hitler. You WILL LOSE THE GAME if you proceed. Reply '/kill hitler' to confirm.")
+                    return
                 else:
                     self.kill(target)
                     self.advance_presidency()

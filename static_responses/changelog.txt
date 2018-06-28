@@ -9,13 +9,14 @@ NEW
 
 IN PROGRESS
 
+- warn a Fascist if they are about to kill Hitler
 
 CUMMING SOON
 
-- warn a Fascist if they are about to kill Hitler
 - allow arguments to creategame to disallow certain numbers of players
 - Have the bot message killed players to break the news
-- disallow single digit names
+- disallow single digit names + more name restrictions like "me too thanks"
+- track and annotate CNH
 - spectator mode where one gets role info
 - keep a string representing the history of tickets and policies, accessible via command
    - furthermore, implement an official claim system so pres/chancy can log claims
