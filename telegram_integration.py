@@ -76,10 +76,12 @@ def game_command_handler(bot, update):
     else:
         player = game.get_player_by_id(player_id)
         if not player: # player's first message can set their nickname
-            if args:
+            if args and (game.check_name(args) is None): # args is a valid name
                 player = Secret_Hitler.Player(player_id, args)
             else:
+                # TODO: maybe also chack their Telegram first name
                 player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+
         # use player object from game if it exists
 
         try:

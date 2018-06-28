@@ -188,6 +188,20 @@ class Game(object):
             if p.id == id:
                 return p
         return None
+    def check_name(self, name):
+        """
+        Check if a name is valid. If it is valid, return None, otherwise,
+        return an appropriate error message about why the name is not valid.
+        """
+        for forbidden_name in ("hitler", "me too thanks"):
+            if name.lower() == forbidden_name:
+                return "Error: {} is not a valid name because it is too similar to {}".format(name, forbidden_name)
+
+        for p in self.players:
+            if p.name.lower() == name.lower():
+                return "Error: name '{}' is already taken".format(name)
+
+        return None
 
     def list_players(self):
         """
@@ -671,12 +685,12 @@ class Game(object):
                     return "Must specify new name like this: /changename [NEW NAME]"
                 else:
                     new_name = args
-                    for p in self.players:
-                        if p.name.lower() == new_name.lower():
-                            return "Error: name '{}' is already taken".format(new_name)
-
-                    from_player.name = new_name
-                    return "Successfully changed name to '{}'".format(new_name)
+                    error_msg = self.check_name(new_name)
+                    if error_msg:
+                        return error_msg
+                    else:
+                        from_player.name = new_name
+                        return "Successfully changed name to '{}'".format(new_name)
             else:
                 return "Must be in game to change nickname"
         elif self.game_state == GameStates.ACCEPT_PLAYERS:
