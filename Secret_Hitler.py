@@ -22,12 +22,19 @@ class Player(object):
     """
     Class for keeping track of an individual Secret Hitler player.
     """
+
+    player_lookup = { }
+
     def __init__(self, _id, _name):
         """
         Set player's name and Telegram ID
         """
         self.id = _id
         self.name = _name
+        self.game = None
+        self.role = None
+
+        Player.player_lookup[_id] = self
     def __str__(self):
         return self.name
 
@@ -53,6 +60,18 @@ class Player(object):
         self.role = _role
         self.party = _role.replace("Hitler", "Fascist")
         self.send_message("Your secret role is {}".format(self.role))
+
+    def join_game(self, _game):
+        if self.game == None || self.game.game_state == GameStates.GAME_OVER:
+            self.game = _game
+            return True
+        else:
+            return False
+    def leave_game(self, _game):
+        assert _game == self.game
+        self.game = None
+        self.role = None
+
 
 class GameStates(Enum):
     ACCEPT_PLAYERS = 1
@@ -722,10 +741,13 @@ class Game(object):
                     return "Error: game is full"
                 elif from_player in self.players:
                     return "Error: you've already joined"
+                elif not from_player.join_game(self):
+                    return "Error: you've already joined another game! Leave/end that one to play here."
                 self.add_player(from_player)
                 return "Welcome, {}! Make sure to [message me directly](t.me/{}) before the game starts so I can send you secret information.".format(from_player.name, BOT_USERNAME)
             elif command == "leave":
                 self.remove_player(from_player)
+                from_player.leave_game(self)
                 return "Successfully left game!"
             elif command == "startgame":
                 if self.num_players < 5:
