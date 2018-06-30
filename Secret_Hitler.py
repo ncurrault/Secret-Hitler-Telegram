@@ -24,6 +24,13 @@ class Player(object):
     """
 
     player_lookup = { }
+    @classmethod
+    def get_player_by_id(cls, id):
+        """
+        Get a Player by their Telegram ID. Returns None if this player has not
+        yet sent anything visible to the bot.
+        """
+        return player_lookup.get(id)
 
     def __init__(self, _id, _name):
         """
@@ -62,16 +69,27 @@ class Player(object):
         self.send_message("Your secret role is {}".format(self.role))
 
     def join_game(self, _game):
-        if self.game == None || self.game.game_state == GameStates.GAME_OVER:
+        if self.leave_game(confirmed=False):
             self.game = _game
             return True
         else:
-            return False
-    def leave_game(self, _game):
-        assert _game == self.game
-        self.game = None
-        self.role = None
+            return False # user must first deal with leaving their current game
 
+    def leave_game(self, confirmed=False):
+        if self.game is None:
+            return True # nothing to leave
+        elif confirmed:
+            # TODO after testing, don't require confirmation to leave these games
+            # or self.game.game_state in (GameStates.GAME_OVER, GameStates.ACCEPT_PLAYERS):
+            _game.remove_player(self)
+
+            self.game = None
+            self.role = None
+
+            return True
+        else:
+            return False # must confirm to successfully leave a game in one
+                         # of the more significant states
 
 class GameStates(Enum):
     ACCEPT_PLAYERS = 1
@@ -214,15 +232,7 @@ class Game(object):
                 if p.name.lower() == player_str.lower(): #p.name.find(player_str) != -1:
                     return p
             return None
-    def get_player_by_id(self, id):
-        """
-        Get a player by their Telegram ID.
-        Returns None if player with this ID could not be found.
-        """
-        for p in self.players:
-            if p.id == id:
-                return p
-        return None
+
     def check_name(self, name):
         """
         Check if a name is valid. If it is valid, return None, otherwise,
@@ -297,6 +307,8 @@ class Game(object):
         else:
             self.global_message("Player {} left, so this game is self-destructing".format(p))
             self.set_game_state(GameStates.GAME_OVER)
+            return
+        self.global_message("Player {} has left".format(p))
 
     def select_chancellor(self, target):
         """
@@ -702,7 +714,7 @@ class Game(object):
                 return p
         return None
 
-    ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "leave", "startgame",
+    ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
         "nominate", "kill", "investigate", "enact", "discard", "whois")
     MARKDOWN_COMMANDS = ("joingame", "blame", "whois", "startgame") # these all use links/tags
@@ -745,10 +757,6 @@ class Game(object):
                     return "Error: you've already joined another game! Leave/end that one to play here."
                 self.add_player(from_player)
                 return "Welcome, {}! Make sure to [message me directly](t.me/{}) before the game starts so I can send you secret information.".format(from_player.name, BOT_USERNAME)
-            elif command == "leave":
-                self.remove_player(from_player)
-                from_player.leave_game(self)
-                return "Successfully left game!"
             elif command == "startgame":
                 if self.num_players < 5:
                     return "Error: only {} players".format(self.num_players)

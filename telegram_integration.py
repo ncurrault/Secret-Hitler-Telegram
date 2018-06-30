@@ -43,6 +43,16 @@ def newgame_handler(bot, update):
         game = Secret_Hitler.Game(chat_id)
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
 
+def leave_handler(bot, update):
+    """
+    Forces a user to leave their current game, regardless of game state (could
+    kill the game)
+    """
+
+    player = Secret_Hitler.Player.get_player_by_id(update.message.from_user.id)
+    player.leave_game(confirmed=True)
+
+
 def parse_message(msg):
     """
     Helper function: split a messsage into its command and its arguments (two strings)
@@ -60,7 +70,7 @@ def parse_message(msg):
     return command, args
 
 COMMAND_ALIASES = {"nom": "nominate", "blam": "blame"}
-def game_command_handler(bot, update):
+def game_command_handler(bot, update, chat_data):
     """
     Pass all commands that Secret_Hitler.Game can handle to game's handle_message method
     Send outputs as replies via Telegram
@@ -70,38 +80,54 @@ def game_command_handler(bot, update):
         command = COMMAND_ALIASES[command]
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
 
-    global game
+    # Try to restore game from chat_data or given restore game (if one exists)
+    if restored_game is None:
+        # restored games are loaded into the first chat we see
+        # TODO: actually make it so that loading saved games only affects the
+        # proper chat
+
+        game = chat_data.get("game_obj")
+    else:
+        game = restored_game
+        restored_game = None
+
+    player = Secret_Hitler.Player.get_player_by_id(player_id)
+
+    # if still no game, try to get it from the Player object
+    if game is None:
+        game = player.game
+
+    # if STILL no game, there's no way a game could be in progress here, so the
+    # message is invalid
     if game is None:
         bot.send_message(chat_id=chat_id, text="Error: no game in progress here")
-    else:
-        player = game.get_player_by_id(player_id)
-        if not player: # player's first message can set their nickname
-            if args and (game.check_name(args) is None): # args is a valid name
-                player = Secret_Hitler.Player(player_id, args)
+        return
+
+    if not player: # player's first message can set their nickname
+        if args and (game.check_name(args) is None): # args is a valid name
+            player = Secret_Hitler.Player(player_id, args)
+        else:
+            # TODO: maybe also chack their Telegram first name for validity
+            player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+
+    try:
+        reply = game.handle_message(player, command, args)
+
+        # pass all supressed errors (if any) directly to the handler in
+        # the order that they occurred
+        while len(Secret_Hitler.telegram_errors) > 0:
+            handle_error(bot, update, Secret_Hitler.telegram_errors.pop(0))
+        # TODO: it would be cleaner to just have a consumer thread handling
+        # these errors as they occur
+
+        if reply: # reply is None if no response is necessary
+            if command in Secret_Hitler.Game.MARKDOWN_COMMANDS: # these require links/tagging
+                bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
             else:
-                # TODO: maybe also chack their Telegram first name
-                player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+                bot.send_message(chat_id=chat_id, text=reply)
 
-        # use player object from game if it exists
-
-        try:
-            reply = game.handle_message(player, command, args)
-
-            # pass all supressed errors (if any) directly to the handler in
-            # the order that they occurred
-            while len(Secret_Hitler.telegram_errors) > 0:
-                handle_error(bot, update, Secret_Hitler.telegram_errors.pop(0))
-            # TODO: it would be cleaner to just have a consumer thread handling
-            # these errors as they occur
-
-            if reply: # reply is None if no response is necessary
-                if command in Secret_Hitler.Game.MARKDOWN_COMMANDS: # these require links/tagging
-                    bot.send_message(chat_id=chat_id, text=reply, parse_mode=telegram.ParseMode.MARKDOWN)
-                else:
-                    bot.send_message(chat_id=chat_id, text=reply)
-
-        except Secret_Hitler.GameOverException:
-            return
+    except Secret_Hitler.GameOverException:
+        return
 
 # Credit (TODO: actual attribution): https://github.com/CaKEandLies/Telegram_Cthulhu/blob/master/cthulhu_game_bot.py#L63
 def feedback_handler(bot, update, args=None):
@@ -147,6 +173,8 @@ def save_game(bot, update):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         game = Secret_Hitler.Game.load(sys.argv[1])
+        for p in game.players:
+            Player.player_lookup[p.id] = p
     else:
         game = None
 
@@ -165,9 +193,9 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('hoo', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/wee")) ))
     dispatcher.add_handler(CommandHandler('hi', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hi")) ))
 
-    dispatcher.add_handler(CommandHandler('newgame', newgame_handler))
+    dispatcher.add_handler(CommandHandler('newgame', newgame_handler, pass_chat_data=True))
 
-    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler))
+    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True))
 
     dispatcher.add_handler(CommandHandler('savegame', save_game))
     dispatcher.add_error_handler(handle_error)

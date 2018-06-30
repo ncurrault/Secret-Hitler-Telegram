@@ -13,10 +13,11 @@ UNTESTED
 
 - Have the bot message killed players to break the news
 - Fixed issue where bot can have unexpected behavior during network outages
+- allow multiple simultaneous games in different chats
 
 IN PROGRESS
 
-- allow multiple simultaneous games in different chats
+
 
 CUMMING SOON
 
