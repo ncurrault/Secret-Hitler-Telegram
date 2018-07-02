@@ -57,7 +57,8 @@ def leave_handler(bot, update):
         player.leave_game(confirmed=True)
         reply = "Successfully left game!"
 
-    bot.send_message(chat_id=update.message.chat.id, text=reply)
+    # bot.send_message(chat_id=update.message.chat.id, text=reply)
+    player.send_message(reply)
 
 
 def parse_message(msg):
