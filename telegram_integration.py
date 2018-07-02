@@ -59,6 +59,7 @@ def leave_handler(bot, update):
     else:
         player.leave_game(confirmed=True)
         reply = "Successfully left game!"
+
     bot.send_message(chat_id=update.message.chat.id, text=reply)
 
 
@@ -204,6 +205,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('hi', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hi")) ))
 
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler, pass_chat_data=True))
+    dispatcher.add_handler(CommandHandler(['leave', 'byebitch'], leave_handler))
 
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True))
 
