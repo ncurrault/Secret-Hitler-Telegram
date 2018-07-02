@@ -233,7 +233,7 @@ class Game(object):
                     return p
             return None
 
-    def check_name(self, name):
+    def check_name(self, name, current_player=None):
         """
         Check if a name is valid. If it is valid, return None, otherwise,
         return an appropriate error message about why the name is not valid.
@@ -250,7 +250,7 @@ class Game(object):
             return "Error: names cannot spoof the annotations from /listplayers"
 
         for p in self.players:
-            if p.name.lower() == name.lower():
+            if p != current_player and p.name.lower() == name.lower():
                 return "Error: name '{}' is already taken".format(name)
 
         return None
@@ -739,7 +739,7 @@ class Game(object):
                     return "Must specify new name like this: /changename [NEW NAME]"
                 else:
                     new_name = args
-                    error_msg = self.check_name(new_name)
+                    error_msg = self.check_name(new_name, current_player=from_player)
                     if error_msg:
                         return error_msg
                     else:
