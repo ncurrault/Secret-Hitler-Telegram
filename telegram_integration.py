@@ -51,14 +51,16 @@ def leave_handler(bot, update):
     """
 
     player = Secret_Hitler.Player.get_player_by_id(update.message.from_user.id)
-    if player.game is None:
+    if player is None or player.game is None:
         reply = "No game to leave!"
     else:
         player.leave_game(confirmed=True)
         reply = "Successfully left game!"
 
-    # bot.send_message(chat_id=update.message.chat.id, text=reply)
-    player.send_message(reply)
+    if player is None:
+        bot.send_message(chat_id=update.message.chat.id, text=reply)
+    else:
+        player.send_message(reply)
 
 
 def parse_message(msg):
