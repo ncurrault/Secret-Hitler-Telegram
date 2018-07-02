@@ -31,17 +31,21 @@ def get_static_handler(command):
         ( lambda bot, update : \
         bot.send_message(chat_id=update.message.chat.id, text=response) ) )
 
-def newgame_handler(bot, update):
+def newgame_handler(bot, update, chat_data):
     """
     Create a new game (if doing so would overwrite an existing game in progress, only proceed if message contains "confirm")
     """
-    global game # TODO: allow multiple games across different chats
+
+    game = chat_data.get("game_obj")
+
     chat_id = update.message.chat.id
     if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER and update.message.text.find("confirm") == -1:
         bot.send_message(chat_id=chat_id, text="Warning: game already in progress here. Reply '/newgame confirm' to confirm")
     else:
         game = Secret_Hitler.Game(chat_id)
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
+
+    chat_data["game_obj"] = game
 
 def leave_handler(bot, update):
     """
@@ -50,7 +54,12 @@ def leave_handler(bot, update):
     """
 
     player = Secret_Hitler.Player.get_player_by_id(update.message.from_user.id)
-    player.leave_game(confirmed=True)
+    if player.game is None:
+        reply = "No game to leave!"
+    else:
+        player.leave_game(confirmed=True)
+        reply = "Successfully left game!"
+    bot.send_message(chat_id=update.message.chat.id, text=reply)
 
 
 def parse_message(msg):
@@ -81,6 +90,7 @@ def game_command_handler(bot, update, chat_data):
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
 
     # Try to restore game from chat_data or given restore game (if one exists)
+    global restored_game
     if restored_game is None:
         # restored games are loaded into the first chat we see
         # TODO: actually make it so that loading saved games only affects the
@@ -172,11 +182,11 @@ def save_game(bot, update):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        game = Secret_Hitler.Game.load(sys.argv[1])
-        for p in game.players:
+        restored_game = Secret_Hitler.Game.load(sys.argv[1])
+        for p in restored_game.players:
             Player.player_lookup[p.id] = p
     else:
-        game = None
+        restored_game = None
 
     # Set up all command handlers
 

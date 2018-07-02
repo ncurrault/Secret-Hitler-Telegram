@@ -30,7 +30,7 @@ class Player(object):
         Get a Player by their Telegram ID. Returns None if this player has not
         yet sent anything visible to the bot.
         """
-        return player_lookup.get(id)
+        return cls.player_lookup.get(id)
 
     def __init__(self, _id, _name):
         """
@@ -81,7 +81,7 @@ class Player(object):
         elif confirmed:
             # TODO after testing, don't require confirmation to leave these games
             # or self.game.game_state in (GameStates.GAME_OVER, GameStates.ACCEPT_PLAYERS):
-            _game.remove_player(self)
+            self.game.remove_player(self)
 
             self.game = None
             self.role = None
