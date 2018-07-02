@@ -35,17 +35,14 @@ def newgame_handler(bot, update, chat_data):
     """
     Create a new game (if doing so would overwrite an existing game in progress, only proceed if message contains "confirm")
     """
-
     game = chat_data.get("game_obj")
 
     chat_id = update.message.chat.id
     if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER and update.message.text.find("confirm") == -1:
         bot.send_message(chat_id=chat_id, text="Warning: game already in progress here. Reply '/newgame confirm' to confirm")
     else:
-        game = Secret_Hitler.Game(chat_id)
+        chat_data["game_obj"] = Secret_Hitler.Game(chat_id)
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
-
-    chat_data["game_obj"] = game
 
 def leave_handler(bot, update):
     """
@@ -91,35 +88,45 @@ def game_command_handler(bot, update, chat_data):
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
 
     # Try to restore game from chat_data or given restore game (if one exists)
-    global restored_game
-    if restored_game is None:
-        # restored games are loaded into the first chat we see
-        # TODO: actually make it so that loading saved games only affects the
-        # proper chat
-
-        game = chat_data.get("game_obj")
-    else:
-        game = restored_game
-        restored_game = None
+    # global restored_game
+    # if restored_game is None:
+    #     # restored games are loaded into the first chat we see
+    #     # TODO: actually make it so that loading saved games only affects the
+    #     # proper chat
+    #
+    #     game = chat_data.get("game_obj")
+    # else:
+    #     game = restored_game
+    #     restored_game = None
 
     player = Secret_Hitler.Player.get_player_by_id(player_id)
+    if "game_obj" in chat_data.keys():
+        game = chat_data["game_obj"]
 
-    # if still no game, try to get it from the Player object
-    if game is None:
-        game = player.game
-
-    # if STILL no game, there's no way a game could be in progress here, so the
-    # message is invalid
-    if game is None:
-        bot.send_message(chat_id=chat_id, text="Error: no game in progress here")
-        return
-
-    if not player: # player's first message can set their nickname
-        if args and (game.check_name(args) is None): # args is a valid name
-            player = Secret_Hitler.Player(player_id, args)
+    # game = ((player is not None) and player.game) or chat_data["game_obj"]
+    if player is None:
+        # this is a user's first interaction with the bot, so a Player
+        # object must be created
+        if game is None:
+            bot.send_message(chat_id=chat_id, text="Error: no game in progress here. Start one with /newgame")
+            return
         else:
-            # TODO: maybe also chack their Telegram first name for validity
-            player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+            if args and (game.check_name(args) is None): # args is a valid name
+                player = Secret_Hitler.Player(player_id, args)
+            else:
+                # TODO: maybe also chack their Telegram first name for validity
+                player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+    else:
+        # it must be a DM or something, because there's no game in the current chat
+        if game is None:
+            game = player.game
+
+        # I don't know how you can end up here
+        if game is None:
+            bot.send_message(chat_id=chat_id, text="Error: it doesn't look like you're currently in a game")
+            return
+
+    # at this point, 'player' and 'game' should both be set correctly
 
     try:
         reply = game.handle_message(player, command, args)
@@ -209,7 +216,7 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True))
 
-    dispatcher.add_handler(CommandHandler('savegame', save_game))
+    dispatcher.add_handler(CommandHandler('savegame', save_game, pass_chat_data=True))
     dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions
