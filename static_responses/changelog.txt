@@ -19,12 +19,12 @@ UNTESTED
 IN PROGRESS
 
 - spectator mode where one gets role info
+- keep a string representing the history of tickets and policies, accessible via command
 
 CUMMING SOON
 
 - allow arguments to creategame to disallow certain numbers of players
-- keep a string representing the history of tickets and policies, accessible via command
-   - furthermore, implement an official claim system so pres/chancy can log claims
+- implement an official claim system so pres/chancy can log claims
 - cursed content 1% of the time
 - auto-ja, auto-nein, auto-ja-until-HZ, auto-nein-until-HZ, auto-cancel
 - kill @spaceandgay automatically

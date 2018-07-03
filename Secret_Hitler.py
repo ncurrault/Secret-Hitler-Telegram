@@ -116,7 +116,10 @@ class Game(object):
         self.termlimited_players = set()
         self.dead_players = set()
         self.confirmed_not_hitlers = set()
-        # TODO: track CNH
+
+        self.spectators = []
+        self.public_history = ""
+        self.spectator_history = ""
 
         self.last_nonspecial_president = None
         self.vetoable_polcy = None
@@ -196,6 +199,22 @@ class Game(object):
                     # network issues can cause errors in Telegram
                 else:
                     raise e
+
+    def record_data(self, msg, spectator_only=False):
+        self.spectator_history += msg
+        if spectator_only:
+            if msg.endswith("\n"):
+                for p in self.spectators:
+                    p.send_message(msg)
+        else:
+            self.public_history += msg
+    def add_spectator(self, target):
+        if spectator not in self.spectators:
+            self.spectators.append(target)
+            target.send_message(spectator_history)
+    def remove_spectator(self, target):
+        if spectator in self.spectators:
+            self.spectators.remove(target)
 
     @staticmethod
     def str_to_policy(vote_str):
