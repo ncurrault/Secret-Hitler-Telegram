@@ -44,13 +44,14 @@ def newgame_handler(bot, update, chat_data):
         chat_data["game_obj"] = Secret_Hitler.Game(chat_id)
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
 
-def leave_handler(bot, update):
+def leave_handler(bot, update, user_data):
     """
     Forces a user to leave their current game, regardless of game state (could
     kill the game)
     """
 
-    player = Secret_Hitler.Player.get_player_by_id(update.message.from_user.id)
+    player = user_data.get("player_obj")
+
     if player is None or player.game is None:
         reply = "No game to leave!"
     else:
@@ -80,7 +81,7 @@ def parse_message(msg):
     return command, args
 
 COMMAND_ALIASES = {"nom": "nominate", "blam": "blame"}
-def game_command_handler(bot, update, chat_data):
+def game_command_handler(bot, update, chat_data, user_data):
     """
     Pass all commands that Secret_Hitler.Game can handle to game's handle_message method
     Send outputs as replies via Telegram
@@ -102,7 +103,10 @@ def game_command_handler(bot, update, chat_data):
     #     game = restored_game
     #     restored_game = None
 
-    player = Secret_Hitler.Player.get_player_by_id(player_id)
+    player = None
+    game = None
+    if "player_obj" in user_data.keys():
+        player = user_data["player_obj"]
     if "game_obj" in chat_data.keys():
         game = chat_data["game_obj"]
 
@@ -119,6 +123,8 @@ def game_command_handler(bot, update, chat_data):
             else:
                 # TODO: maybe also chack their Telegram first name for validity
                 player = Secret_Hitler.Player(player_id, update.message.from_user.first_name)
+
+            user_data["player_obj"] = player
     else:
         # it must be a DM or something, because there's no game in the current chat
         if game is None:
@@ -179,7 +185,8 @@ def handle_error(bot, update, error):
     except TelegramError:
         logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
 
-def save_game(bot, update):
+def save_game(bot, update, chat_data, user_data):
+    # TODO: update this for multi-game
     if game is not None:
         fname = "ignore/aborted_game.p"
         i = 0
@@ -215,11 +222,11 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('hi', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hi")) ))
 
     dispatcher.add_handler(CommandHandler('newgame', newgame_handler, pass_chat_data=True))
-    dispatcher.add_handler(CommandHandler(['leave', 'byebitch'], leave_handler))
+    dispatcher.add_handler(CommandHandler(['leave', 'byebitch'], leave_handler, pass_user_data=True))
 
-    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True))
+    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True, pass_user_data=True))
 
-    dispatcher.add_handler(CommandHandler('savegame', save_game, pass_chat_data=True))
+    dispatcher.add_handler(CommandHandler('savegame', save_game, pass_chat_data=True, pass_user_data=True))
     dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions

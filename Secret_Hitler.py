@@ -23,15 +23,6 @@ class Player(object):
     Class for keeping track of an individual Secret Hitler player.
     """
 
-    player_lookup = { }
-    @classmethod
-    def get_player_by_id(cls, id):
-        """
-        Get a Player by their Telegram ID. Returns None if this player has not
-        yet sent anything visible to the bot.
-        """
-        return cls.player_lookup.get(id)
-
     def __init__(self, _id, _name):
         """
         Set player's name and Telegram ID
@@ -40,8 +31,6 @@ class Player(object):
         self.name = _name
         self.game = None
         self.role = None
-
-        Player.player_lookup[_id] = self
     def __str__(self):
         return self.name
 
