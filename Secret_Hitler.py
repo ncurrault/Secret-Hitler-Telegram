@@ -210,11 +210,11 @@ class Game(object):
         else:
             self.public_history += msg
     def add_spectator(self, target):
-        if spectator not in self.spectators:
+        if target not in self.spectators:
             self.spectators.append(target)
-            target.send_message(spectator_history)
+            target.send_message(self.spectator_history)
     def remove_spectator(self, target):
-        if spectator in self.spectators:
+        if target in self.spectators:
             self.spectators.remove(target)
 
     @staticmethod
