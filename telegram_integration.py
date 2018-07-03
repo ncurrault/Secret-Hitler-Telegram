@@ -50,6 +50,12 @@ def leave_handler(bot, update, user_data):
     kill the game)
     """
 
+    # edge case: first message after restore is /leave
+    global restored_players
+    if player_id in restored_players.keys():
+        user_data["player_obj"] = restored_players[player_id]
+        del restored_players[player_id]
+
     player = user_data.get("player_obj")
 
     if player is None or player.game is None:
@@ -91,17 +97,15 @@ def game_command_handler(bot, update, chat_data, user_data):
         command = COMMAND_ALIASES[command]
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
 
-    # Try to restore game from chat_data or given restore game (if one exists)
-    # global restored_game
-    # if restored_game is None:
-    #     # restored games are loaded into the first chat we see
-    #     # TODO: actually make it so that loading saved games only affects the
-    #     # proper chat
-    #
-    #     game = chat_data.get("game_obj")
-    # else:
-    #     game = restored_game
-    #     restored_game = None
+    # Try to restore relevant save data (and mark this data as dirty)
+    global restored_game
+    global restored_players
+    if restored_game is not None and restored_game.global_chat == chat_id:
+        user_data["game_obj"] = restored_game
+        restored_game = None
+    if player_id in restored_players.keys():
+        user_data["player_obj"] = restored_players[player_id]
+        del restored_players[player_id]
 
     player = None
     game = None
@@ -186,7 +190,12 @@ def handle_error(bot, update, error):
         logging.getLogger(__name__).warning('TelegramError! %s caused by this update: %s', error, update)
 
 def save_game(bot, update, chat_data, user_data):
-    # TODO: update this for multi-game
+    game = None
+    if "game_obj" in chat_data.keys():
+        game = chat_data["game_obj"]
+    elif "player_obj" in user_data.keys():
+        game = user_data["player_obj"].game
+
     if game is not None:
         fname = "ignore/aborted_game.p"
         i = 0
@@ -198,11 +207,13 @@ def save_game(bot, update, chat_data, user_data):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Saved game in current state as '{}'".format(fname))
 
+
 if __name__ == "__main__":
+    restored_players = {}
     if len(sys.argv) > 1:
         restored_game = Secret_Hitler.Game.load(sys.argv[1])
         for p in restored_game.players:
-            Player.player_lookup[p.id] = p
+            restored_players[p.id] = p
     else:
         restored_game = None
 
