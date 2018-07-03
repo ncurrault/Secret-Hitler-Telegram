@@ -410,7 +410,7 @@ class Game(object):
         self.global_message("JA!" if election_result else "NEIN! Election Tracker is at {}/3".format(self.anarchy_progress + 1))
         self.global_message(self.election_results())
 
-        vote_bits = "".join(["1" if vote else "0" for vote in self.votes])
+        vote_bits = "".join([{True: "1", False: "0", None: "-"}[vote] for vote in self.votes])
         self.record_data("({}) - \n".format(vote_bits), spectator_only=False)
 
         if election_result:
