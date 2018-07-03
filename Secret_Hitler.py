@@ -181,6 +181,8 @@ class Game(object):
                 else:
                     p.set_role("Liberal")
 
+        self.record_data("ROLES:\n" + "\n".join(["{} - {}".format(p, p.role) for p in self.players]) + "\n\n", spectator_only=True)
+
         self.president = self.players[0]
         self.set_game_state(GameStates.CHANCY_NOMINATION)
 
@@ -203,9 +205,8 @@ class Game(object):
     def record_data(self, msg, spectator_only=False):
         self.spectator_history += msg
         if spectator_only:
-            if msg.endswith("\n"):
-                for p in self.spectators:
-                    p.send_message(msg)
+            for p in self.spectators:
+                p.send_message(msg)
         else:
             self.public_history += msg
     def add_spectator(self, target):
@@ -302,7 +303,7 @@ class Game(object):
         Remove a Player p from the game. (If p is not in the game, does nothing)
         Only valid before game starts or, theoretically, if they're dead (untested)
         If this method is called on a live player after the game has begun, the game will self-destruct
-        (reval all player roles and declare game over).
+        (reveal all player roles and declare game over).
         """
         if p not in self.players:
             return # alredy "removed" because not in
@@ -335,6 +336,7 @@ class Game(object):
             self.global_message("President {} has nominated Chancellor {}.".format(self.president, self.chancellor))
             #self.global_message("Now voting on {}/{}".format(self.president, self.chancellor))
             self.set_game_state(GameStates.ELECTION)
+            self.record_data("{}/{} ".format(self.president, self.chancellor), spectator_only=False)
 
             return True
 
@@ -408,7 +410,11 @@ class Game(object):
         self.global_message("JA!" if election_result else "NEIN! Election Tracker is at {}/3".format(self.anarchy_progress + 1))
         self.global_message(self.election_results())
 
+        vote_bits = "".join(["1" if vote else "0" for vote in self.votes])
+        self.record_data("({}) - \n".format(vote_bits), spectator_only=False)
+
         if election_result:
+            self.record_data("President is reviewing: {}\n".format("".join(deck[:3])), spectator_only=True)
             if self.fascist >= 3:
                 if self.chancellor.role == "Hitler":
                     self.end_game("Fascist", "Hitler was elected chancellor")
@@ -420,6 +426,8 @@ class Game(object):
             self.update_termlimits()
             self.anarchy_progress = 0
         else:
+            self.record_data("NEIN\n", spectator_only=False)
+
             self.anarchy_progress += 1
             if self.anarchy_progress == 3:
                 self.anarchy()
@@ -439,6 +447,7 @@ class Game(object):
             self.discard.append(discard)
 
             self.set_game_state(GameStates.LEG_CHANCY)
+            self.record_data("Chancellor is reviewing: {}\n".format("".join(self.deck[:2])), spectator_only=True)
             return True
         else:
             return False
@@ -497,6 +506,7 @@ class Game(object):
             self.advance_presidency() # TODO: test presidential succession when veto occurrs
         elif self.president_veto_vote and self.chancellor_veto_vote: # veto
             self.global_message("VETO!")
+            self.record_data(" - veto!\n", spectator_only=False)
 
             self.discard.append(self.vetoable_polcy)
             self.check_reshuffle()
@@ -516,6 +526,8 @@ class Game(object):
             self.pass_liberal()
         else:
             self.pass_fascist(on_anarchy)
+
+        self.record_data(policy + "\n", spectator_only=False)
 
         self.check_reshuffle()
         if not on_anarchy and self.game_state == GameStates.LEG_CHANCY: # don't need to wait for other decisison
@@ -596,11 +608,13 @@ class Game(object):
         """
         origin.send_message("<{0}> party affiliation is <{0.party}>".format(target))
         self.global_message("{} has investigated {}".format(origin, target))
+        self.record_data(" - investigates {}\n".format(target), spectator_only=False)
     def deck_peek(self, who, num=3):
         """
         Sends player `who` a message indicating the top `num` policy tiles.
         """
         who.send_message("".join(self.deck[:num]))
+        self.record_data(" - peeks at {}\n".format("".join(self.deck[:num])), spectator_only=False)
     def special_elect(self, target):
         """
         Simulate a special election:
@@ -614,6 +628,8 @@ class Game(object):
 
         self.last_nonspecial_president = self.president
         self.president = target
+
+        self.record_data(" - special elects {}\n".format(target), spectator_only=False)
         return True
 
     def kill(self, target):
@@ -623,6 +639,7 @@ class Game(object):
             Otherwise, this player will be unable to vote, be nominated, or run for president
             for the remainder of the game.
         """
+        self.record_data(" - kills {}\n".format(target), spectator_only=False)
         if target.role == "Hitler":
             self.end_game("Liberal", "Hitler was killed")
         else:
@@ -639,6 +656,7 @@ class Game(object):
          - and clear term limits
         """
         self.check_reshuffle()
+        self.record_data(" - anarchy!\n".format(target), spectator_only=False)
         self.pass_policy(self.deck.pop(0), on_anarchy=True)
 
         self.termlimited_players.clear()
@@ -731,7 +749,8 @@ class Game(object):
 
     ACCEPTED_COMMANDS = ("listplayers", "changename", "joingame", "startgame",
         "boardstats", "deckstats", "anarchystats", "blame", "ja", "nein",
-        "nominate", "kill", "investigate", "enact", "discard", "whois")
+        "nominate", "kill", "investigate", "enact", "discard", "whois",
+        "spectate", "unspectate", "logs")
     MARKDOWN_COMMANDS = ("joingame", "blame", "whois", "startgame") # these all use links/tags
     def handle_message(self, from_player, command, args=""):
         """
@@ -762,12 +781,26 @@ class Game(object):
                         return "Successfully changed name to '{}'".format(new_name)
             else:
                 return "Must be in game to change nickname"
+        elif command == "spectate":
+            if from_player in self.players:
+                return "Error: you cannot spectate a game you're in. Please /leave to spectate."
+            else:
+                from_player.send_message("You are now spectating!")
+                self.add_spectator(from_player)
+                return
+        elif command == "unspectate":
+            self.remove_spectator(from_player)
+            from_player.send_message("You are no longer spectating")
+        elif command == "logs":
+            return self.public_history
         elif self.game_state == GameStates.ACCEPT_PLAYERS:
             if command == "joingame":
                 if self.num_players == 10:
                     return "Error: game is full"
                 elif from_player in self.players:
                     return "Error: you've already joined"
+                elif from_player in self.spectators:
+                    return "Error: you cannot join a game you're spectating. Please /unspectate to join"
                 elif not from_player.join_game(self):
                     return "Error: you've already joined another game! Leave/end that one to play here."
                 self.add_player(from_player)

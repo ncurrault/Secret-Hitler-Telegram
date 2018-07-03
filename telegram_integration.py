@@ -86,7 +86,7 @@ def parse_message(msg):
         args = " ".join(args)
     return command, args
 
-COMMAND_ALIASES = {"nom": "nominate", "blam": "blame"}
+COMMAND_ALIASES = {"nom": "nominate", "blam": "blame", "dig": "investigate"}
 def game_command_handler(bot, update, chat_data, user_data):
     """
     Pass all commands that Secret_Hitler.Game can handle to game's handle_message method

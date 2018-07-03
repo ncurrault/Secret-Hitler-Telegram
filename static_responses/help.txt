@@ -5,6 +5,8 @@ deckstats - get number of tiles in deck, discard, and public info about type dis
 anarchystats - get status of election tracker
 newgame - start a game with global messages in the current chat
 leave - leave a game (only valid if it has not started)
+spectate - "spectate" a game (learn all players' roles and the policies they see)
+unspectate - unsubscribe from spectator updates in a game
 startgame - deal out roles and begin the game!
 ja - Ja!
 nein - Nein
