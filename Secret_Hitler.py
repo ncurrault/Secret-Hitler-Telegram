@@ -115,6 +115,7 @@ class Game(object):
         self.chancellor = None
         self.termlimited_players = set()
         self.dead_players = set()
+        self.confirmed_not_hitlers = set()
         # TODO: track CNH
 
         self.last_nonspecial_president = None
@@ -251,6 +252,7 @@ class Game(object):
         (C) indicates a chancellor/chancellor candidate
         (TL) indicates a term-limited player
         (RIP) indicates a dead player
+        (CNH) indicates a player that has been proven not to be Hitler
         """
         ret = ""
         for i in range(len(self.players)):
@@ -263,6 +265,8 @@ class Game(object):
                 status += " (TL)"
             if self.players[i] in self.dead_players:
                 status += " (RIP)"
+            if self.players[i] in self.confirmed_not_hitlers:
+                status += " (CNH)"
             ret += "({}) {}{}\n".format(i + 1, self.players[i], status)
 
         return ret
@@ -386,8 +390,11 @@ class Game(object):
         self.global_message(self.election_results())
 
         if election_result:
-            if self.fascist >= 3 and self.chancellor.role == "Hitler":
-                self.end_game("Fascist", "Hitler was elected chancellor")
+            if self.fascist >= 3:
+                if self.chancellor.role == "Hitler":
+                    self.end_game("Fascist", "Hitler was elected chancellor")
+                else:
+                    self.confirmed_not_hitlers.add(self.chancellor)
             else:
                 self.set_game_state(GameStates.LEG_PRES)
 

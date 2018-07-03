@@ -8,22 +8,21 @@ NEW
 - reiterate all stats when a policy is played
 - warn a Fascist if they are about to kill Hitler
 - disallow single digit names + more name restrictions like "me too thanks"
+- Have the bot message killed players to break the news
+- Fixed issue where bot can have unexpected behavior during network outages
 
 UNTESTED
 
-- Have the bot message killed players to break the news
-- Fixed issue where bot can have unexpected behavior during network outages
 - allow multiple simultaneous games in different chats
+- track and annotate CNH
 
 IN PROGRESS
 
-
+- spectator mode where one gets role info
 
 CUMMING SOON
 
 - allow arguments to creategame to disallow certain numbers of players
-- track and annotate CNH
-- spectator mode where one gets role info
 - keep a string representing the history of tickets and policies, accessible via command
    - furthermore, implement an official claim system so pres/chancy can log claims
 - cursed content 1% of the time
