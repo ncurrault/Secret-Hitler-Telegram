@@ -714,6 +714,9 @@ class Game(object):
             self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
             # reveal all player roles when the game has ended
 
+            for p in self.players:
+                p.game = None # allow players to join other games
+
 
     def save(self, fname):
         """

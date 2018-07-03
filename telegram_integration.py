@@ -41,9 +41,8 @@ def newgame_handler(bot, update, chat_data):
     if game is not None and game.game_state != Secret_Hitler.GameStates.GAME_OVER and update.message.text.find("confirm") == -1:
         bot.send_message(chat_id=chat_id, text="Warning: game already in progress here. Reply '/newgame confirm' to confirm")
     else:
-        if game is not None: # allow players to rejoin
-            for p in game.players:
-                p.game = None
+        if game is not None: # properly end that game
+            game.set_game_state(Secret_Hitler.GameStates.GAME_OVER)
         chat_data["game_obj"] = Secret_Hitler.Game(chat_id)
         bot.send_message(chat_id=chat_id, text="Created game! /joingame to join, /startgame to start")
 
@@ -104,7 +103,7 @@ def game_command_handler(bot, update, chat_data, user_data):
     global restored_game
     global restored_players
     if restored_game is not None and restored_game.global_chat == chat_id:
-        user_data["game_obj"] = restored_game
+        chat_data["game_obj"] = restored_game
         restored_game = None
     if player_id in restored_players.keys():
         user_data["player_obj"] = restored_players[player_id]
