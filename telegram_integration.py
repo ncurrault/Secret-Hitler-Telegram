@@ -52,9 +52,10 @@ def leave_handler(bot, update, user_data):
     kill the game)
     """
 
+    player_id = update.message.from_user.id
     # edge case: first message after restore is /leave
     global restored_players
-    if update.message.from_user.id in restored_players.keys():
+    if player_id in restored_players.keys():
         user_data["player_obj"] = restored_players[player_id]
         del restored_players[player_id]
 
