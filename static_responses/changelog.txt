@@ -10,13 +10,14 @@ NEW
 - disallow single digit names + more name restrictions like "me too thanks"
 - Have the bot message killed players to break the news
 - Fixed issue where bot can have unexpected behavior during network outages
+- track and annotate CNH
+- spectator mode where one gets role info
+- keep a string representing the history of tickets and policies, accessible via command
 
 UNTESTED
 
 - allow multiple simultaneous games in different chats
-- track and annotate CNH
-- spectator mode where one gets role info
-- keep a string representing the history of tickets and policies, accessible via command
+- notify players of seating order
 
 IN PROGRESS
 
