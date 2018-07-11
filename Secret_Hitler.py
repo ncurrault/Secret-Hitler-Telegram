@@ -788,6 +788,8 @@ class Game(object):
         elif command == "spectate":
             if from_player in self.players:
                 return "Error: you cannot spectate a game you're in. Please /leave to spectate."
+            elif from_player in self.spectators:
+                return "Error: you are already spectating. /unspectate to stop."
             else:
                 from_player.send_message("You are now spectating!")
                 self.add_spectator(from_player)
