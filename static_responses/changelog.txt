@@ -27,7 +27,6 @@ IN PROGRESS
 COMING SOON (MAYBE)
 
 - put numbers in the logs because players' names may have changed
-- make /vore an alias for either /nom or /leavegame (50/50)
 - implement an official claim system so pres/chancy can log claims
 - send snarky messages to those who try to leave before joining
 - cursed content 1% of the time

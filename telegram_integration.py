@@ -247,7 +247,7 @@ if __name__ == "__main__":
     dispatcher.add_handler(CommandHandler('hoo', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/wee")) ))
     dispatcher.add_handler(CommandHandler('hi', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hi")) ))
     dispatcher.add_handler(CommandHandler('vore', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="Error: 1930s Germany is a no vore zone")) ))
-    dispatcher.add_handler(MessageHandler(Filters.all, blaze_handler))
+    dispatcher.add_handler(MessageHandler(~ Filters.command, blaze_handler))
 
     dispatcher.add_error_handler(handle_error)
 
