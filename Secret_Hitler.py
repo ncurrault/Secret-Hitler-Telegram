@@ -422,7 +422,7 @@ class Game(object):
                     self.confirmed_not_hitlers.add(self.chancellor)
 
             self.set_game_state(GameStates.LEG_PRES)
-            
+
             self.update_termlimits()
             self.anarchy_progress = 0
         else:
@@ -712,8 +712,11 @@ class Game(object):
             self.global_message("President ({}) must kill someone".format(self.president))
             self.president.send_message("Pick someone to kill!\n(\"/kill [player name or index]\")" + self.list_players())
         elif self.game_state == GameStates.GAME_OVER:
-            self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
+            # self.global_message("\n".join(["{} - {}".format(p, p.role) for p in self.players]))
             # reveal all player roles when the game has ended
+
+            # reveal EVERYTHING THAT HAPPENED when game ends
+            self.global_message(self.spectator_history)
 
             for p in self.players:
                 p.game = None # allow players to join other games
