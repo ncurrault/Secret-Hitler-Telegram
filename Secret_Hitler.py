@@ -414,7 +414,7 @@ class Game(object):
         self.record_data("({}) - \n".format(vote_bits), spectator_only=False)
 
         if election_result:
-            self.record_data("President is reviewing: {}\n".format("".join(deck[:3])), spectator_only=True)
+            self.record_data("President is reviewing: {}\n".format("".join(self.deck[:3])), spectator_only=True)
             if self.fascist >= 3:
                 if self.chancellor.role == "Hitler":
                     self.end_game("Fascist", "Hitler was elected chancellor")
@@ -614,7 +614,7 @@ class Game(object):
         Sends player `who` a message indicating the top `num` policy tiles.
         """
         who.send_message("".join(self.deck[:num]))
-        self.record_data(" - peeks at {}\n".format("".join(self.deck[:num])), spectator_only=False)
+        self.record_data(" - peeks at {}\n".format("".join(self.deck[:num])), spectator_only=True)
     def special_elect(self, target):
         """
         Simulate a special election:
