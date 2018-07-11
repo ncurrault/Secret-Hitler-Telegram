@@ -421,9 +421,9 @@ class Game(object):
                     self.end_game("Fascist", "Hitler was elected chancellor")
                 else:
                     self.confirmed_not_hitlers.add(self.chancellor)
-            else:
-                self.set_game_state(GameStates.LEG_PRES)
 
+            self.set_game_state(GameStates.LEG_PRES)
+            
             self.update_termlimits()
             self.anarchy_progress = 0
         else:
