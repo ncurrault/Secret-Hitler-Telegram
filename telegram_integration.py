@@ -236,20 +236,19 @@ if __name__ == "__main__":
     dispatcher.add_handler(get_static_handler("changelog"))
     dispatcher.add_handler(CommandHandler('feedback', feedback_handler, pass_args=True))
 
+    dispatcher.add_handler(CommandHandler('newgame', newgame_handler, pass_chat_data=True))
+    dispatcher.add_handler(CommandHandler(['leave', 'byebitch'], leave_handler, pass_user_data=True))
+
+    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True, pass_user_data=True))
+    dispatcher.add_handler(CommandHandler('savegame', save_game, pass_chat_data=True, pass_user_data=True))
+
     # memes
     dispatcher.add_handler(CommandHandler('wee', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hoo")) ))
     dispatcher.add_handler(CommandHandler('hoo', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/wee")) ))
     dispatcher.add_handler(CommandHandler('hi', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="/hi")) ))
     dispatcher.add_handler(CommandHandler('vore', (lambda bot, update : bot.send_message(chat_id=update.message.chat.id, text="Error: 1930s Germany is a no vore zone")) ))
-
-    dispatcher.add_handler(CommandHandler('newgame', newgame_handler, pass_chat_data=True))
-    dispatcher.add_handler(CommandHandler(['leave', 'byebitch'], leave_handler, pass_user_data=True))
-
-    dispatcher.add_handler(CommandHandler(Secret_Hitler.Game.ACCEPTED_COMMANDS + tuple(COMMAND_ALIASES.keys()), game_command_handler, pass_chat_data=True, pass_user_data=True))
-
     dispatcher.add_handler(MessageHandler(Filters.all, blaze_handler))
 
-    dispatcher.add_handler(CommandHandler('savegame', save_game, pass_chat_data=True, pass_user_data=True))
     dispatcher.add_error_handler(handle_error)
 
     # allows viewing of exceptions
