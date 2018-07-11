@@ -146,6 +146,7 @@ class Game(object):
         """
 
         random.shuffle(self.players) # randomize seating order
+        self.global_message("Randomized seating order:\n" + self.list_players())
 
         self.num_players = len(self.players)
         self.num_alive_players = self.num_players
