@@ -867,14 +867,17 @@ class Game(object):
         elif command in ("nominate", "kill", "investigate") and from_player == self.president:
             # commands that involve the president selecting another player
             target = self.get_player(args)
-            # TODO: username restrict "me too thanks" and "Hitler"
+
+            target_confirmed = False
             if self.game_state == GameStates.EXECUTION and command == "kill":
                 if args.lower().find("me too thanks") != -1:
                     target = from_player
+                    target_confirmed = True
                 elif from_player.party == "Fascist" and args.lower().find("hitler") != -1:
                     for p in players:
                         if p.role == "Hitler":
                             target = p
+                            target_confirmed = True
                             break
 
             if target == None:
@@ -892,9 +895,9 @@ class Game(object):
                     else:
                         return "Error: you can't nominate yourself for president.".format(target)
             elif command == "kill" and self.game_state == GameStates.EXECUTION:
-                if from_player == target:
+                if from_player == target and not target_confirmed:
                     return "You are about to kill yourself (technically allowed by the rules). Reply '/kill me too thanks' to confirm suicide."
-                elif from_player.role == "Fascist" and target.role == "Hitler":
+                elif from_player.role == "Fascist" and target.role == "Hitler" and not target_confirmed:
                     from_player.send_message("It looks like you are trying to kill Hitler. You WILL LOSE THE GAME if you proceed. Reply '/kill hitler' to confirm.")
                     return
                 else:
