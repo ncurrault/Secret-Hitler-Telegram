@@ -480,6 +480,7 @@ class Game(object):
             random.shuffle(self.deck)
 
             self.global_message("Deck has been reshuffled.")
+            self.record_data("*deck reshuffled*\n", spectator_only=False)
 
     def check_veto(self):
         """

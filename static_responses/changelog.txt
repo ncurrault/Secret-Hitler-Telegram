@@ -13,16 +13,16 @@ NEW
 - track and annotate CNH
 - spectator mode where one gets role info
 - keep a string representing the history of tickets and policies, accessible via command
+- /vore meme response
 
 UNTESTED
 
 - allow multiple simultaneous games in different chats
 - notify players of seating order
-
-IN PROGRESS
-
 - add reshuffle to logs
 - send out /blazeit at 4:20
+
+IN PROGRESS
 
 COMING SOON (MAYBE)
 
