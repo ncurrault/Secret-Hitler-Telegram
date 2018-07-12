@@ -613,10 +613,14 @@ class Game(object):
         """
         Sends player `who` a message indicating the top `num` policy tiles.
         """
-        who.send_message("".join(self.deck[:num]))
+        policies = "".join(self.deck[:num])
 
-        spectator_who = {self.president: "President", self.chancellor: "Chancellor"}.get(who, str(who))
-        self.record_data(" - {} peeks at {}\n".format(spectator_who, "".join(self.deck[:num])), spectator_only=True)
+        who.send_message(policies)
+
+        spectator_who = {self.president: "President ({})", self.chancellor: "Chancellor ({})"}.get(who, "{}")
+        spectator_who = spectator_who.format(who)
+
+        self.record_data(" - {} peeks at {}\n".format(spectator_who, policies), spectator_only=True)
     def special_elect(self, target):
         """
         Simulate a special election:
