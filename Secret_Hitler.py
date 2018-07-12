@@ -117,7 +117,7 @@ class Game(object):
         self.dead_players = set()
         self.confirmed_not_hitlers = set()
 
-        self.spectators = []
+        self.spectators = set()
         self.public_history = ""
         self.spectator_history = ""
 
@@ -212,7 +212,7 @@ class Game(object):
             self.public_history += msg
     def add_spectator(self, target):
         if target not in self.spectators:
-            self.spectators.append(target)
+            self.spectators.add(target)
             target.send_message(self.spectator_history)
     def remove_spectator(self, target):
         if target in self.spectators:
@@ -798,7 +798,7 @@ class Game(object):
             else:
                 return "Must be in game to change nickname"
         elif command == "spectate":
-            if from_player in self.players:
+            if from_player in self.players and from_player not in self.dead_players:
                 return "Error: you cannot spectate a game you're in. Please /leave to spectate."
             elif from_player in self.spectators:
                 return "Error: you are already spectating. /unspectate to stop."
