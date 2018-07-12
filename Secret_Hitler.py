@@ -677,11 +677,15 @@ class Game(object):
         self.set_game_state(GameStates.GAME_OVER)
         raise GameOverException("The {} team wins! ({}.)".format(winning_party, reason))
 
-    def set_game_state(self, new_state):
+    def set_game_state(self, new_state, repeat=False):
         """
         Change the game state to new_state and perform any actions associated with that state's beginning:
         Announce the state change, notify relevant president/chancellor about what they must do.
         """
+
+        if self.game_state == new_state and not repeat:
+            return # don't repeat state change unless specifically requested
+
         self.game_state = new_state
         self.reset_blame_ratelimit()
 
