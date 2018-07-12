@@ -17,15 +17,15 @@ NEW
 - notify players of seating order
 - add reshuffle to logs
 - send out /blazeit at 4:20
+- have log alias to logs
+- allow dead people to spectate without leaving
+- HitlerZone reminder
+- clarified spectator messages
+- avoid double-reveal when game ends and a new one is started
 
 UNTESTED
 
 - allow multiple simultaneous games in different chats
-- clarified spectator messages
-- avoid double-reveal when game ends and a new one is started
-- have log alias to logs
-- allow dead people to spectate without leaving
-- HitlerZone reminder
 
 IN PROGRESS
 
