@@ -553,7 +553,10 @@ class Game(object):
         If not on anarcy, initiates appropriate executive powers depending on policy number and player count
         """
         self.fascist += 1
-        self.global_message("A fascist policy was passed!")
+        if self.fascist == 3:
+            self.global_message("A fascist policy was passed! Welcome to the HitlerZone™!")
+        else:
+            self.global_message("A fascist policy was passed!")
 
         if self.fascist == 6:
             self.end_game("Fascist", "6 Fascist policies were enacted")
