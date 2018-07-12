@@ -665,7 +665,7 @@ class Game(object):
          - and clear term limits
         """
         self.check_reshuffle()
-        self.record_data(" - anarchy!\n".format(target), spectator_only=False)
+        self.record_data(" - anarchy!\n", spectator_only=False)
         self.pass_policy(self.deck.pop(0), on_anarchy=True)
 
         self.termlimited_players.clear()
