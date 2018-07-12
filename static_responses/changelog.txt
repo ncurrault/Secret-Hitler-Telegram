@@ -14,18 +14,23 @@ NEW
 - spectator mode where one gets role info
 - keep a string representing the history of tickets and policies, accessible via command
 - /vore meme response
+- notify players of seating order
+- add reshuffle to logs
+- send out /blazeit at 4:20
 
 UNTESTED
 
 - allow multiple simultaneous games in different chats
-- notify players of seating order
-- add reshuffle to logs
-- send out /blazeit at 4:20
+- clarified spectator messages
+- avoid double-reveal when game ends and a new one is started
+- have log alias to logs
+- allow dead people to spectate without leaving
 
 IN PROGRESS
 
 COMING SOON (MAYBE)
 
+- HitlerZone reminder
 - put numbers in the logs because players' names may have changed
 - implement an official claim system so pres/chancy can log claims
 - send snarky messages to those who try to leave before joining
