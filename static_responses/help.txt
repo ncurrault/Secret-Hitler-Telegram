@@ -11,6 +11,7 @@ startgame - deal out roles and begin the game!
 ja - Ja!
 nein - Nein
 blame - list all players who haven't voted in an election
+logs - get a block of text describing everything (public) that's happened so far
 help - view details about command syntax
 
 -- Commands that require arguments --
