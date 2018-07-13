@@ -257,7 +257,7 @@ if __name__ == "__main__":
         level=logging.INFO) # not sure exactly how this works
 
     if os.path.exists("ignore/ssl-key.key") and os.path.exists("ignore/ssl-cert.pem"):
-        updater.start_webhook(url_path=API_KEY, cert="ignore/ssl-cert.pem", key="ignore/ssl-key.key")
+        updater.start_webhook(url_path=API_KEY)
     else:
         updater.start_polling()
 
