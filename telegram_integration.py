@@ -256,5 +256,11 @@ if __name__ == "__main__":
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO) # not sure exactly how this works
 
-    updater.start_polling()
+    try:
+        with open("ignore/webhook.txt") as f:
+            url_path = f.read()
+            updater.start_webhook(url_path=url_path)
+    except IOError:
+        updater.start_polling()
+
     updater.idle()
