@@ -6,19 +6,17 @@ import pickle
 import time
 from enum import Enum
 from telegram.error import Unauthorized, TelegramError
+import telegram_integration
 
 BOT_USERNAME = "SecretHitlerGame_Bot"
 BLAME_RATELIMIT = 69 # seconds
-TESTING = (__name__ == "__main__") # test whenever this file is run directly
-# set TESTING to True to simulate a game locally
-if not TESTING:
-    import telegram_integration
-    telegram_errors = [ ]
-
-    # unnecessary in TESTING mode
 
 EVERYONE_HITLER = True
 EVERYONE_HITLER_EXPLANATION = "Hi, the game admins set the EVERYONE_HITLER flag, so you are not the only Hitler, so the game will keep going."
+
+telegram_errors = [ ]
+# global list that acts as a buffer where errors can be silently passed without
+# affecting game mechanics
 
 class Player(object):
     """
@@ -37,17 +35,14 @@ class Player(object):
         return self.name
 
     def send_message(self, msg, supress_errors=True):
-        if TESTING:
-            print "[ Message for {} ]\n{}".format(self, msg)
-        else:
-            try:
-                telegram_integration.bot.send_message(chat_id=self.id, text=msg)
-            except TelegramError as e:
-                if supress_errors:
-                    telegram_errors.append(e)
-                    # network issues can cause errors in Telegram
-                else:
-                    raise e
+        try:
+            telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+        except TelegramError as e:
+            if supress_errors:
+                telegram_errors.append(e)
+                # network issues can cause errors in Telegram
+            else:
+                raise e
     def get_markdown_tag(self):
         return "[{}](tg://user?id={})".format(self.name, self.id)
 
@@ -101,12 +96,9 @@ class Game(object):
         """
         Initialize a game with a given chat location. Prepare deck/discard, begin accepting players.
         """
-        if TESTING:
-            self.deck = ['F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'F', 'L', 'F', 'L']
-        else:
-            self.deck = ['L', 'L', 'L', 'L', 'L', 'L',
-                        'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F']
-            random.shuffle(self.deck)
+        self.deck = ['L', 'L', 'L', 'L', 'L', 'L',
+                     'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F', 'F']
+        random.shuffle(self.deck)
 
         self.global_chat = chat_id
 
@@ -155,38 +147,32 @@ class Game(object):
         self.num_dead_players = 0
         self.reset_blame_ratelimit()
 
-        if TESTING:
-            roles = ["Liberal", "Fascist", "Liberal", "Hitler", "Liberal", "Liberal", "Fascist", "Liberal", "Fascist", "Liberal"]
-            for i in range(len(self.players)):
-                self.players[i].set_role(roles[i])
-                # NOTE: testing configuration does not "notify" fascists of night-phase info (if this breaks, it'll be apparent pretty quickly)
+        if EVERYONE_HITLER and self.num_players >= 7:
+            for p in self.players:
+                p.set_role("Hitler")
         else:
-            if EVERYONE_HITLER and self.num_players >= 7:
-                for p in self.players:
-                    p.set_role("Hitler")
+            if self.num_players == 5 or self.num_players == 6: # 1F + H
+                fascists = random.sample(self.players, 2)
+            elif self.num_players == 7 or self.num_players == 8: # 2F + H
+                fascists = random.sample(self.players, 3)
+            elif self.num_players == 9 or self.num_players == 10: # 3F + H
+                fascists = random.sample(self.players, 4)
             else:
-                if self.num_players == 5 or self.num_players == 6: # 1F + H
-                    fascists = random.sample(self.players, 2)
-                elif self.num_players == 7 or self.num_players == 8: # 2F + H
-                    fascists = random.sample(self.players, 3)
-                elif self.num_players == 9 or self.num_players == 10: # 3F + H
-                    fascists = random.sample(self.players, 4)
-                else:
-                    raise Exception("Invalid number of players")
+                raise Exception("Invalid number of players")
 
-                for p in self.players:
-                    if p == fascists[0]:
-                        p.set_role("Hitler")
-                        if self.num_players <= 6:
-                            p.send_message("Fascist: {}".format(fascists[1]))
-                    elif p in fascists:
-                        p.set_role("Fascist")
-                        if self.num_players <= 6:
-                            p.send_message("Hitler: {}".format(fascists[0]))
-                        else:
-                            p.send_message("Other Fascist{}: {}\nHitler: {}".format("s" if len(fascists) > 3 else "", ", ".join([ other_p.name for other_p in fascists[1:] if other_p != p ]), fascists[0]))
+            for p in self.players:
+                if p == fascists[0]:
+                    p.set_role("Hitler")
+                    if self.num_players <= 6:
+                        p.send_message("Fascist: {}".format(fascists[1]))
+                elif p in fascists:
+                    p.set_role("Fascist")
+                    if self.num_players <= 6:
+                        p.send_message("Hitler: {}".format(fascists[0]))
                     else:
-                        p.set_role("Liberal")
+                        p.send_message("Other Fascist{}: {}\nHitler: {}".format("s" if len(fascists) > 3 else "", ", ".join([ other_p.name for other_p in fascists[1:] if other_p != p ]), fascists[0]))
+                else:
+                    p.set_role("Liberal")
 
         self.record_data("ROLES:\n" + "\n".join(["{} - {}".format(p, p.role) for p in self.players]) + "\n\n", spectator_only=True)
 
@@ -197,17 +183,14 @@ class Game(object):
         """
         Send a message to all players using the chat specified in the constructor.
         """
-        if TESTING:
-            print "[ Message for everyone ]\n{}".format(msg)
-        else:
-            try:
-                telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
-            except TelegramError as e:
-                if supress_errors:
-                    telegram_errors.append(e)
-                    # network issues can cause errors in Telegram
-                else:
-                    raise e
+        try:
+            telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+        except TelegramError as e:
+            if supress_errors:
+                telegram_errors.append(e)
+                # network issues can cause errors in Telegram
+            else:
+                raise e
 
     def record_data(self, msg, spectator_only=False):
         self.spectator_history += msg
@@ -980,113 +963,3 @@ class Game(object):
                     return "Error: Given policy not in top 2"
         else:
             return "/{} is not valid here".format(command)
-    def TEST_handle(self, player, command, args=""):
-        """
-        TESTING FUNCTION: run self.handle_message(player, command, args) but print out
-        the input and output for debugging
-        """
-        response = self.handle_message(player, command, args)
-        print "[{}] {} {}".format(player, command, args)
-        if response:
-            print "[Reply to {}] {}".format(player, response)
-    def TEST_vote(self, should_pass=True):
-        """
-        TESTING FUNCTION: use TEST_handle to simulate a unanimous "ja" (or unanimous "nein" if should_pass=False)
-        This helps keep test-game code concise when you're not explicitly testing elections
-        """
-        for p in self.players:
-            if p not in self.dead_players:
-                self.TEST_handle(p, "ja" if should_pass else "nein")
-
-def test_game():
-    game = Game(None)
-    players = [
-        Player("1", "A"),
-        Player("2", "B"),
-        Player("3", "C"),
-        Player("4", "D"),
-        Player("5", "E"),
-        Player("6", "F"),
-        Player("7", "G") ]
-
-    for p in players:
-        game.add_player(p)
-
-    game.TEST_handle(players[2], "startgame")
-
-    game.TEST_handle(players[0], "nominate", "D") # election 1
-    game.TEST_vote()
-
-    game.TEST_handle(players[0], "discard", "L")
-    game.TEST_handle(players[3], "enact", "F") # 0L / 1F
-
-    game.TEST_handle(players[1], "nominate", "E") # election 2
-    game.TEST_vote()
-    game.TEST_handle(players[1], "discard", "L")
-    game.TEST_handle(players[4], "enact", "F")
-
-    game.TEST_handle(players[1], "investigate", "E")
-
-    game.TEST_handle(players[2], "nominate", "F") # election 3
-    game.TEST_vote()
-    game.TEST_handle(players[2], "discard", "L")
-    game.TEST_handle(players[5], "enact", "F")
-
-    game.TEST_handle(players[2], "nominate", "B") # special elect
-
-    game.TEST_handle(players[1], "nominate", "G") # election 4
-    game.TEST_vote()
-    game.TEST_handle(players[1], "discard", "L")
-    game.TEST_handle(players[6], "enact", "F")
-
-    game.TEST_handle(players[1], "kill", "me too thanks") # execution
-
-    game.TEST_handle(players[3], "nominate", "A") # election 5 - should fail because dead people cannot vote and ties fail
-    game.TEST_handle(players[0], "nein")
-    game.TEST_handle(players[1], "ja") # players[1] is dead
-    game.TEST_handle(players[2], "ja")
-    game.TEST_handle(players[3], "nein")
-    game.TEST_handle(players[4], "nein")
-    game.TEST_handle(players[5], "ja")
-    game.TEST_handle(players[6], "ja")
-
-    game.TEST_handle(players[4], "nominate", "A") # election 6 - fail
-    game.TEST_handle(players[0], "nein")
-    game.TEST_handle(players[2], "ja")
-    game.TEST_handle(players[3], "nein")
-    game.TEST_handle(players[4], "nein")
-    game.TEST_handle(players[5], "ja")
-    game.TEST_handle(players[6], "ja")
-
-    game.TEST_handle(players[5], "nominate", "A") # election 7 - fail
-    game.TEST_handle(players[0], "nein")
-    game.TEST_handle(players[2], "ja")
-    game.TEST_handle(players[3], "nein")
-    game.TEST_handle(players[4], "nein")
-    game.TEST_handle(players[5], "ja")
-    game.TEST_handle(players[6], "ja")
-
-    # anarchy, second bullet should be ignored
-
-    game.TEST_handle(players[6], "nominate", "A")
-    game.TEST_vote()
-
-    game.TEST_handle(players[6], "discard", "s p i c y b o i")
-    game.TEST_handle(players[0], "enact", "liberal") # check other policy nomenclature
-
-    game.TEST_handle(players[0], "ja") #veto decisison
-    game.TEST_handle(players[6], "nein")
-
-    game.TEST_handle(players[0], "nominate", "D")
-    game.TEST_vote()
-
-    game.TEST_handle(players[0], "discard", "l")
-    game.TEST_handle(players[3], "enact", "f")
-
-    #veto decisison
-    game.TEST_handle(players[0], "nein")
-    # Fascist victory
-    # game.handle_message(players[6], "ja") # other veto vote shouldn't matter
-
-if TESTING:
-    test_game()
