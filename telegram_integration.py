@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 import Secret_Hitler
+
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-
 from telegram.error import TelegramError
 import logging
 
@@ -14,8 +14,6 @@ import time
 
 with open("ignore/API_key.txt", "r") as f:
     API_KEY = f.read().rstrip()
-
-bot = telegram.Bot(token=API_KEY)
 
 def get_static_handler(command):
     """

@@ -5,18 +5,23 @@ import random
 import pickle
 import time
 from enum import Enum
-from telegram.error import Unauthorized, TelegramError
-import telegram_integration
 
-BOT_USERNAME = "SecretHitlerGame_Bot"
+import telegram
+from telegram.error import Unauthorized, TelegramError
+
+with open("ignore/API_key.txt", "r") as f:
+    API_KEY = f.read().rstrip()
+bot = telegram.Bot(token=API_KEY)
+
+telegram_errors = [ ]
+# global list that acts as a buffer where errors can be silently passed without
+# affecting game mechanics
+
 BLAME_RATELIMIT = 69 # seconds
 
 EVERYONE_HITLER = True
 EVERYONE_HITLER_EXPLANATION = "Hi, the game admins set the EVERYONE_HITLER flag, so you are not the only Hitler, so the game will keep going."
 
-telegram_errors = [ ]
-# global list that acts as a buffer where errors can be silently passed without
-# affecting game mechanics
 
 class Player(object):
     """
@@ -36,7 +41,7 @@ class Player(object):
 
     def send_message(self, msg, supress_errors=True):
         try:
-            telegram_integration.bot.send_message(chat_id=self.id, text=msg)
+            bot.send_message(chat_id=self.id, text=msg)
         except TelegramError as e:
             if supress_errors:
                 telegram_errors.append(e)
@@ -184,7 +189,7 @@ class Game(object):
         Send a message to all players using the chat specified in the constructor.
         """
         try:
-            telegram_integration.bot.send_message(chat_id=self.global_chat, text=msg)
+            bot.send_message(chat_id=self.global_chat, text=msg)
         except TelegramError as e:
             if supress_errors:
                 telegram_errors.append(e)
@@ -820,7 +825,7 @@ class Game(object):
                 elif not from_player.join_game(self):
                     return "Error: you've already joined another game! Leave/end that one to play here."
                 self.add_player(from_player)
-                return "Welcome, {}! Make sure to [message me directly](t.me/{}) before the game starts so I can send you secret information.".format(from_player.name, BOT_USERNAME)
+                return "Welcome, {}! Make sure to [message me directly](t.me/{}) before the game starts so I can send you secret information.".format(from_player.name, bot.username)
             elif command == "startgame":
                 if self.num_players < 5:
                     return "Error: only {} players".format(self.num_players)
@@ -828,7 +833,7 @@ class Game(object):
                 blocked = self.get_blocked_player()
                 if blocked:
                     return "Error: All players must have messaged and not blocked @{}! {} must message/unblock me." \
-                        .format(BOT_USERNAME, blocked.get_markdown_tag()) \
+                        .format(bot.username, blocked.get_markdown_tag()) \
                         .replace("_","\\_") # some Markdown escaping may be necessary
 
                 self.start_game()
