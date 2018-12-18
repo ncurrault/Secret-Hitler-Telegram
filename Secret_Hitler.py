@@ -19,7 +19,7 @@ telegram_errors = [ ]
 
 BLAME_RATELIMIT = 69 # seconds
 
-EVERYONE_HITLER = True
+EVERYONE_HITLER = False
 EVERYONE_HITLER_EXPLANATION = "Hi, the game admins set the EVERYONE_HITLER flag, so you are not the only Hitler, so the game will keep going."
 
 
