@@ -136,7 +136,7 @@ def game_command_handler(bot, update, chat_data, user_data):
     else:
         # it must be a DM or something, because there's no game in the current chat
         if game is None:
-            game = player.game
+            game = player.get_target_game()
 
         # I don't know how you can end up here
         if game is None:

@@ -36,6 +36,8 @@ class Player(object):
         self.name = _name
         self.game = None
         self.role = None
+        self.spectating = []
+
     def __str__(self):
         return self.name
 
@@ -81,6 +83,28 @@ class Player(object):
         else:
             return False # must confirm to successfully leave a game in one
                          # of the more significant states
+
+    def spectate(self, game):
+        self.spectating.append(game)
+
+    def unspectate(self, game):
+        if game in self.spectating:
+            self.spectating.remove(game)
+
+    def get_target_game(self):
+        if self.game: # if you're in a game that's probably what you care about
+            return self.game
+        else:
+            pending_game = None # the most recent game with
+            for spec_game in self.spectating[::-1]: # start with most the game they more recently /spectate'd
+                if spec_game.game_state == GameStates.GAME_OVER:
+                    self.spectating.remove(spec_game) # stop keeping track of this game
+                elif spec_game.game_state == GameStates.ACCEPT_PLAYERS and not pending_game:
+                    pending_game = spec_game # player probably isn't asking about a game that hasn't started
+                else:
+                    return spec_game
+            return pending_game
+
 
 class GameStates(Enum):
     ACCEPT_PLAYERS = 1
@@ -808,9 +832,11 @@ class Game(object):
             else:
                 from_player.send_message("You are now spectating!")
                 self.add_spectator(from_player)
+                from_player.spectate(self)
                 return
         elif command == "unspectate":
             self.remove_spectator(from_player)
+            from_player.unspectate(self)
             from_player.send_message("You are no longer spectating")
         elif command == "logs":
             return self.public_history
