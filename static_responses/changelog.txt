@@ -1,4 +1,4 @@
-NEW
+"NEW"
 
 - /joingame accepts optional nickname argument
 - implement Amrita's checker for sliding into those DMs
@@ -26,8 +26,11 @@ NEW
 UNTESTED
 
 - allow multiple simultaneous games in different chats
+- names ending in special characters make the following person into a slashtag in the message sent to dms
+- aliases /slurp and /spy for /spectate
 
 IN PROGRESS
+- let spectators use some commands in DMs (/whois, /deckstats, etc)
 
 COMING SOON (MAYBE)
 
