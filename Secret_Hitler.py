@@ -42,6 +42,8 @@ class Player(object):
         return self.name
 
     def send_message(self, msg, supress_errors=True):
+        if len(msg) == 0:
+            return
         try:
             bot.send_message(chat_id=self.id, text=msg)
         except TelegramError as e:
@@ -838,6 +840,7 @@ class Game(object):
             self.remove_spectator(from_player)
             from_player.unspectate(self)
             from_player.send_message("You are no longer spectating")
+            return
         elif command == "logs":
             return self.public_history
         elif self.game_state == GameStates.ACCEPT_PLAYERS:

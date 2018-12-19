@@ -72,12 +72,12 @@ def leave_handler(bot, update, user_data):
         player.send_message(reply)
 
 
-def parse_message(msg):
+def parse_message(msg, username="SecretHitlerGame_Bot"):
     """
     Helper function: split a messsage into its command and its arguments (two strings)
     """
     command = msg.split()[0]
-    if command.endswith(bot.username):
+    if command.endswith(username):
         command = command[1:command.find("@")]
     else:
         command = command[1:]
@@ -96,7 +96,7 @@ def game_command_handler(bot, update, chat_data, user_data):
     Pass all commands that Secret_Hitler.Game can handle to game's handle_message method
     Send outputs as replies via Telegram
     """
-    command, args = parse_message(update.message.text)
+    command, args = parse_message(update.message.text, username=bot.username)
     if command in COMMAND_ALIASES.keys():
         command = COMMAND_ALIASES[command]
     player_id, chat_id = update.message.from_user.id, update.message.chat.id
